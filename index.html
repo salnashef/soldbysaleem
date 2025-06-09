@@ -4,142 +4,200 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Saleem Nashef | BC Real Estate Agent</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #242840;
       color: #ffffff;
+      margin: 0;
+      padding: 0;
     }
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
       padding: 20px;
       background-color: #98aab5;
       border-radius: 10px;
+      color: #242840;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    header, section, footer {
+      margin-bottom: 30px;
+      text-align: center;
     }
     nav a {
       color: #ffffff;
       text-decoration: none;
-      margin-right: 15px;
+      margin: 0 10px;
+      font-weight: bold;
     }
-    footer {
-      text-align: center;
-      margin-top: 20px;
-      color: #ffffff;
+    .profile-pic {
+      width: 160px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      margin-bottom: 20px;
     }
     #mortgage-calculator {
-      margin-top: 20px;
       padding: 20px;
       background: #ffffff;
       color: #242840;
       border-radius: 10px;
     }
-    input {
+    input, button {
+      width: 100%;
       margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #242840;
+      color: #ffffff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #1a1d3d;
     }
     canvas {
       width: 100%;
-      height: 400px;
+      max-height: 400px;
+    }
+    footer {
+      text-align: center;
+      color: #ffffff;
+      padding: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
+      <img src="Profile-Realtor.jpg" alt="Saleem Nashef" class="profile-pic">
       <h1>Saleem Nashef</h1>
       <p class="subtitle">Licensed BC Real Estate Agent | Westmont Realty</p>
       <nav>
         <a href="#about">About</a>
         <a href="#services">Services</a>
+        <a href="#mortgage-calculator">Mortgage Calculator</a>
         <a href="#contact">Contact</a>
       </nav>
     </header>
-    <main>
-      <section id="about">
-        <h2>Welcome!</h2>
-        <p>
-          Are you looking to buy, sell, or invest in real estate in beautiful British Columbia? I'm <strong>Saleem Nashef</strong>, a licensed real estate agent with <strong>Westmont Realty</strong>. My focus is on helping you achieve your property goals with confidence and personalized service.
-        </p>
-      </section>
-      <section id="services">
-        <h2>How I Can Help</h2>
+
+    <section id="about">
+      <h2>About Me</h2>
+      <p>Hello! I'm <strong>Saleem Nashef</strong>, a licensed real estate agent in British Columbia with <strong>Westmont Realty</strong>. I specialize in helping clients buy, sell, and invest in residential and commercial real estate.</p>
+    </section>
+
+    <section id="services">
+      <h2>My Services</h2>
+      <ul>
+        <p>🏠 Buy Real Estate</p>
+        <p>🏡 Sell Real Estate</p>
+        <p>💼 Real Estate Investment Opportunities</p>
+      </ul>
+    </section>
+
+    <section id="mortgage-calculator">
+      <h2>Mortgage Calculator</h2>
+      <label>Home Price: <input type="number" id="homePrice" value="300000"></label><br>
+      <label>Down Payment: <input type="number" id="downPayment" value="60000"></label><br>
+      <label>Loan Term (years): <input type="number" id="loanTerm" value="25"></label><br>
+      <label>Interest Rate (%): <input type="number" id="interestRate" value="4"></label><br>
+      <button onclick="calculateMortgage()">Calculate</button>
+      <p id="resultText"></p>
+      <p id="totalInterestPaid"></p>
+      <canvas id="mortgageChart"></canvas>
+    </section>
+    
+    	    	 <b>Visit these useful resources:</b>
         <ul>
-          <li><strong>Buy:</strong> Find your dream home or the perfect investment property.</li>
-          <li><strong>Sell:</strong> Get top value for your property with expert marketing and guidance.</li>
-          <li><strong>Invest:</strong> Receive insight and advice for making smart real estate investments.</li>
+          <li><a href="https://www.realtor.ca/en" target="_blank">Official Real Estate Searching Website MLS: Realtor</a></li>
+          <li><a href="https://www.rew.ca" target="_blank">One of the best private Real Estate listing Websites: Rew</a></li>
+          <li><a href="https://westmontrealty.ca/" target="_blank">Our Brokrage Website: Westmont Realty</a></li>
+          <li><a href="https://www.realtor.ca/agent/2225871/saleem-nashef-103-15055-54-a-avenue-surrey-british-columbia-v3s5x7" target="_blank">Search my professional page at Realtor.ca</a></li>
+          <li><a href="https://www.bcfsa.ca/re-licencee/RE607738" target="_blank">Search my professional page at BCFSA</a></li>
+          
         </ul>
-      </section>
-      <section id="mortgage-calculator">
-        <h2>Mortgage Calculator</h2>
-        <label>Home Price: <input type="number" id="homePrice" value="300000"></label><br>
-        <label>Down Payment: <input type="number" id="downPayment" value="60000"></label><br>
-        <label>Loan Term (years): <input type="number" id="loanTerm" value="25"></label><br>
-        <label>Interest Rate (%): <input type="number" id="interestRate" value="4"></label><br>
-        <button onclick="calculateMortgage()">Calculate</button>
-        <canvas id="mortgageChart"></canvas>
-      </section>
-      <section id="contact">
-        <h2>Contact</h2>
-        <ul>
-          <li><strong>Name:</strong> Saleem Nashef</li>
-          <li><strong>Phone:</strong> <a href="tel:+17782393566">+1 778 239 3566</a></li>
-          <li><strong>Email:</strong> <a href="mailto:saleem_alnashef@hotmail.com">saleem_alnashef@hotmail.com</a></li>
-          <li><strong>Instagram:</strong> <a href="https://instagram.com/soldbysaleem" target="_blank">@soldbysaleem</a></li>
-          <li><strong>Brokerage:</strong> Westmont Realty</li>
-          <li><strong>Licensed BC Real Estate Agent</strong></li>
-        </ul>
-      </section>
-    </main>
+
+
+    <section id="contact">
+      <h2>Contact Information</h2>
+      <p><strong>📱 Phone:</strong> +1 (778) 239-3566</p>
+      <p><strong>📧 Email:</strong> <a href="mailto:saleem_alnashef@hotmail.com">saleem_alnashef@hotmail.com</a></p>
+      <p><strong>🏢 Brokerage:</strong> Westmont Realty</p>
+    </section>
+
     <footer>
       &copy; 2025 Saleem Nashef - Licensed BC Real Estate Agent | Westmont Realty
     </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     function calculateMortgage() {
       let homePrice = parseFloat(document.getElementById("homePrice").value);
       let downPayment = parseFloat(document.getElementById("downPayment").value);
       let loanTerm = parseFloat(document.getElementById("loanTerm").value);
       let interestRate = parseFloat(document.getElementById("interestRate").value) / 100;
-      
+
       let loanAmount = homePrice - downPayment;
       let monthlyRate = interestRate / 12;
       let numPayments = loanTerm * 12;
-      
+
       let monthlyPayment = (loanAmount * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -numPayments));
-      
-      let equity = [];
-      let interestPaid = [];
-      let debtRemaining = [];
-      
+
+      if (isNaN(monthlyPayment) || !isFinite(monthlyPayment)) {
+        alert("Please fill all fields with valid numbers.");
+        return;
+      }
+
+      document.getElementById("resultText").innerText = `Estimated Monthly Payment: $${monthlyPayment.toFixed(2)}`;
+
+      let equity = [], interestPaid = [], debtRemaining = [], cumulativeInterest = [];
       let balance = loanAmount;
-      
-      for (let year = 1; year <= loanTerm; year++) {
-        let annualInterest = balance * interestRate;
-        let principalPaid = (monthlyPayment * 12) - annualInterest;
-        balance -= principalPaid;
-        
+      let totalInterestPaid = 0;
+      let maxYears = Math.min(30, loanTerm);
+
+      for (let year = 1; year <= maxYears; year++) {
+        let annualInterest = 0;
+        for (let month = 1; month <= 12; month++) {
+          let interestThisMonth = balance * monthlyRate;
+          let principalThisMonth = monthlyPayment - interestThisMonth;
+
+          annualInterest += interestThisMonth;
+          totalInterestPaid += interestThisMonth;
+          balance -= principalThisMonth;
+
+          if (balance < 0) {
+            balance = 0;
+            break;
+          }
+        }
         equity.push(homePrice - balance);
         interestPaid.push(annualInterest);
         debtRemaining.push(balance);
+        cumulativeInterest.push(totalInterestPaid);
       }
-      
-      drawChart(equity, interestPaid, debtRemaining, loanTerm);
+
+      document.getElementById("totalInterestPaid").innerText = `Total Interest Paid Over Loan Period: $${totalInterestPaid.toFixed(2)}`;
+
+      drawChart(equity, interestPaid, debtRemaining, cumulativeInterest, maxYears);
     }
 
-    function drawChart(equity, interestPaid, debtRemaining, years) {
+    function drawChart(equity, interestPaid, debtRemaining, cumulativeInterest, years) {
       let ctx = document.getElementById("mortgageChart").getContext("2d");
-      
+
       new Chart(ctx, {
         type: "line",
         data: {
           labels: Array.from({ length: years }, (_, i) => i + 1),
           datasets: [
             { label: "Equity", data: equity, borderColor: "green", fill: false },
-            { label: "Interest Paid", data: interestPaid, borderColor: "red", fill: false },
-            { label: "Remaining Debt", data: debtRemaining, borderColor: "blue", fill: false }
+            { label: "Interest Paid (Yearly)", data: interestPaid, borderColor: "red", fill: false },
+            { label: "Remaining Debt", data: debtRemaining, borderColor: "blue", fill: false },
+            { label: "Total Interest Paid", data: cumulativeInterest, borderColor: "orange", fill: false, borderDash: [5, 5] }
           ]
         },
         options: {
