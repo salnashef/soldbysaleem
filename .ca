@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Saleem Nashef | BC Real Estate Agent</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Saleem Nashef</h1>
+      <p class="subtitle">Licensed BC Real Estate Agent | Westmont Realty</p>
+      <nav>
+        <a href="#about">About</a>
+        <a href="#services">Services</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+    <main>
+      <section id="about">
+        <h2>Welcome!</h2>
+        <p>
+          Are you looking to buy, sell, or invest in real estate in beautiful British Columbia? I'm <strong>Saleem Nashef</strong>, a licensed real estate agent with <strong>Westmont Realty</strong>. My focus is on helping you achieve your property goals with confidence and personalized service.
+        </p>
+      </section>
+      <section id="services">
+        <h2>How I Can Help</h2>
+        <ul>
+          <li><strong>Buy:</strong> Find your dream home or the perfect investment property.</li>
+          <li><strong>Sell:</strong> Get top value for your property with expert marketing and guidance.</li>
+          <li><strong>Invest:</strong> Receive insight and advice for making smart real estate investments.</li>
+        </ul>
+      </section>
+      <section id="contact">
+        <h2>Contact</h2>
+        <ul>
+          <li><strong>Name:</strong> Saleem Nashef</li>
+          <li><strong>Phone:</strong> <a href="tel:+17782393566">+1 778 239 3566</a></li>
+          <li><strong>Email:</strong> <a href="mailto:saleem_alnashef@hotmail.com">saleem_alnashef@hotmail.com</a></li>
+          <li><strong>Instagram:</strong> <a href="https://instagram.com/soldbysaleem" target="_blank">@soldbysaleem</a></li>
+          <li><strong>Brokerage:</strong> Westmont Realty</li>
+          <li><strong>Licensed BC Real Estate Agent</strong></li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      &copy; 2025 Saleem Nashef - Licensed BC Real Estate Agent | Westmont Realty
+    </footer>
+  </div>
+</body>
+</html>
