@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real Estate Sale Profit Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    input, select { margin-bottom: 10px; padding: 5px; width: 100%; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    button { padding: 10px 20px; font-size: 16px; }
+    .result { margin-top: 20px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+
+<h2>Real Estate Sale Profit Calculator (BC)</h2>
+
+<label>Purchase Price ($):</label>
+<input type="number" id="purchasePrice">
+
+<label>Down Payment ($):</label>
+<input type="number" id="downPayment">
+
+<label>Amortization Period (years):</label>
+<input type="number" id="amortization">
+
+<label>Mortgage Interest Rate (%):</label>
+<input type="number" id="interestRate" step="0.01">
+
+<label>Years Paid So Far:</label>
+<input type="number" id="yearsPaid">
+
+<label>Selling Price ($):</label>
+<input type="number" id="sellingPrice">
+
+<label>Is this your Principal Residence?</label>
+<select id="principalResidence">
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+
+<label>Lawyer Fee ($):</label>
+<input type="number" id="lawyerFee" value="1500">
+
+<button onclick="calculateProfit()">Calculate Profit</button>
+
+<div class="result" id="result"></div>
+
+<script>
+function calculateProfit() {
+  let P = parseFloat(document.getElementById("purchasePrice").value);
+  let D = parseFloat(document.getElementById("downPayment").value);
+  let A = parseFloat(document.getElementById("amortization").value);
+  let r = parseFloat(document.getElementById("interestRate").value) / 100 / 12;
+  let n = A * 12;
+  let yearsPaid = parseFloat(document.getElementById("yearsPaid").value);
+  let monthsPaid = yearsPaid * 12;
+  let sellingPrice = parseFloat(document.getElementById("sellingPrice").value);
+  let isPrincipal = document.getElementById("principalResidence").value;
+  let lawyerFee = parseFloat(document.getElementById("lawyerFee").value);
+
+  let loanAmount = P - D;
+
+  // Mortgage monthly payment
+  let M = loanAmount * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+
+  // Remaining balance after payments
+  let balance = loanAmount;
+  for (let i = 0; i < monthsPaid; i++) {
+    let interest = balance * r;
+    let principalPaid = M - interest;
+    balance -= principalPaid;
+  }
+
+  // Realtor Fee (5%)
+  let realtorFee = sellingPrice * 0.05;
+
+  // BC Flipping Tax (20% profit if sold in year 1, 10% in year 2)
+  let profitBeforeFees = sellingPrice - P;
+  let flippingTax = 0;
+  if (yearsPaid < 1) flippingTax = profitBeforeFees * 0.20;
+  else if (yearsPaid < 2) flippingTax = profitBeforeFees * 0.10;
+
+  // Net proceeds after selling
+  let equity = P - loanAmount + (loanAmount - balance);
+  let netProceeds = sellingPrice - balance - realtorFee - flippingTax - lawyerFee;
+
+  // Capital Gains Tax if not principal residence (half the profit is taxable at ~53% top bracket)
+  let capitalGainsTax = 0;
+  if (isPrincipal === "no") {
+    let taxableAmount = (profitBeforeFees - realtorFee - lawyerFee - flippingTax) / 2;
+    capitalGainsTax = taxableAmount * 0.53;
+    netProceeds -= capitalGainsTax;
+  }
+
+  document.getElementById("result").innerHTML = `
+    <strong>Mortgage Balance Remaining:</strong> $${balance.toFixed(2)}<br>
+    <strong>Equity Built:</strong> $${equity.toFixed(2)}<br>
+    <strong>Realtor Fee (5%):</strong> $${realtorFee.toFixed(2)}<br>
+    <strong>BC Flipping Tax:</strong> $${flippingTax.toFixed(2)}<br>
+    <strong>Lawyer Fee:</strong> $${lawyerFee.toFixed(2)}<br>
+    <strong>Capital Gains Tax (if applicable):</strong> $${capitalGainsTax.toFixed(2)}<br>
+    <strong>Net Profit After All Costs:</strong> <span style="color:green">$${netProceeds.toFixed(2)}</span>
+  `;
+}
+</script>
+
+</body>
+</html>
