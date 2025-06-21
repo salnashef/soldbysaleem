@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Positive Cash Flow & Mortgage Payoff Graph</title>
+  <title>Positive Cash Flow Property Calculator + Mortgage Payoff Graph</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 20px; }
@@ -39,6 +39,9 @@
 <label>Estimated Monthly Expenses (tax, insurance etc.) ($):</label>
 <input type="number" id="monthlyExpenses" value="400">
 
+<label>Monthly Management Fee ($):</label>
+<input type="number" id="managementFee" value="0">
+
 <label>Annual Lump Sum Payment (% of original mortgage per term):</label>
 <input type="number" id="lumpSumPercent" value="15">
 
@@ -63,6 +66,7 @@ function calculateCashFlow() {
   const amortizationPeriod = parseFloat(document.getElementById('amortizationPeriod').value);
   const rentIncome = parseFloat(document.getElementById('rentIncome').value);
   const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value);
+  const managementFee = parseFloat(document.getElementById('managementFee').value);
 
   const downPaymentAmount = propertyValue * downPaymentPercent;
   const mortgageAmount = propertyValue - downPaymentAmount;
@@ -73,13 +77,14 @@ function calculateCashFlow() {
   const monthlyPayment = (mortgageAmount * monthlyInterestRate) / 
                          (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
 
-  const totalMonthlyExpenses = monthlyPayment + monthlyExpenses;
+  const totalMonthlyExpenses = monthlyPayment + monthlyExpenses + managementFee;
   const netMonthlyCashFlow = rentIncome - totalMonthlyExpenses;
 
   document.getElementById('result').innerHTML = `
     <strong>Results:</strong><br>
     Down Payment: $${downPaymentAmount.toFixed(2)}<br>
     Monthly Mortgage Payment: $${monthlyPayment.toFixed(2)}<br>
+    Monthly Management Fee: $${managementFee.toFixed(2)}<br>
     Total Monthly Expenses: $${totalMonthlyExpenses.toFixed(2)}<br>
     Net Monthly Cash Flow: $${netMonthlyCashFlow.toFixed(2)} (${netMonthlyCashFlow >= 0 ? 'Positive' : 'Negative'})<br>
   `;
