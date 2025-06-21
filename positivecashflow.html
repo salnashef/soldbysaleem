@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Positive Cash Flow & Mortgage Payoff Graph</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    button { background-color: #007bff; color: #fff; border: none; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    h2 { text-align: center; }
+    .result { padding: 10px; background: #f0f0f0; margin-top: 10px; border-radius: 6px;}
+    canvas { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Positive Cash Flow Property Calculator + Mortgage Payoff Graph</h2>
+
+<label>Property Value ($):</label>
+<input type="number" id="propertyValue" value="500000">
+
+<label>Down Payment (%):</label>
+<input type="number" id="downPaymentPercent" value="20">
+
+<label>Interest Rate (%):</label>
+<input type="number" id="interestRate" value="5">
+
+<label>Amortization Period (years):</label>
+<input type="number" id="amortizationPeriod" value="25">
+
+<label>Term (years):</label>
+<input type="number" id="term" value="5">
+
+<label>Monthly Rent Income ($):</label>
+<input type="number" id="rentIncome" value="2800">
+
+<label>Estimated Monthly Expenses (tax, insurance etc.) ($):</label>
+<input type="number" id="monthlyExpenses" value="400">
+
+<label>Annual Lump Sum Payment (% of original mortgage per term):</label>
+<input type="number" id="lumpSumPercent" value="15">
+
+<button onclick="calculateEverything()">Calculate</button>
+
+<div class="result" id="result"></div>
+
+<canvas id="balanceChart" height="100"></canvas>
+
+<script>
+let chart; // define chart globally
+
+function calculateEverything() {
+  calculateCashFlow();
+  calculateYearsToPayOffWithGraph();
+}
+
+function calculateCashFlow() {
+  const propertyValue = parseFloat(document.getElementById('propertyValue').value);
+  const downPaymentPercent = parseFloat(document.getElementById('downPaymentPercent').value) / 100;
+  const interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
+  const amortizationPeriod = parseFloat(document.getElementById('amortizationPeriod').value);
+  const rentIncome = parseFloat(document.getElementById('rentIncome').value);
+  const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value);
+
+  const downPaymentAmount = propertyValue * downPaymentPercent;
+  const mortgageAmount = propertyValue - downPaymentAmount;
+
+  const monthlyInterestRate = interestRate / 12;
+  const numberOfPayments = amortizationPeriod * 12;
+
+  const monthlyPayment = (mortgageAmount * monthlyInterestRate) / 
+                         (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
+
+  const totalMonthlyExpenses = monthlyPayment + monthlyExpenses;
+  const netMonthlyCashFlow = rentIncome - totalMonthlyExpenses;
+
+  document.getElementById('result').innerHTML = `
+    <strong>Results:</strong><br>
+    Down Payment: $${downPaymentAmount.toFixed(2)}<br>
+    Monthly Mortgage Payment: $${monthlyPayment.toFixed(2)}<br>
+    Total Monthly Expenses: $${totalMonthlyExpenses.toFixed(2)}<br>
+    Net Monthly Cash Flow: $${netMonthlyCashFlow.toFixed(2)} (${netMonthlyCashFlow >= 0 ? 'Positive' : 'Negative'})<br>
+  `;
+}
+
+function calculateYearsToPayOffWithGraph() {
+  const propertyValue = parseFloat(document.getElementById('propertyValue').value);
+  const downPaymentPercent = parseFloat(document.getElementById('downPaymentPercent').value) / 100;
+  const interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
+  const amortizationPeriod = parseFloat(document.getElementById('amortizationPeriod').value);
+  const term = parseFloat(document.getElementById('term').value);
+  const lumpSumPercent = parseFloat(document.getElementById('lumpSumPercent').value) / 100;
+
+  const downPaymentAmount = propertyValue * downPaymentPercent;
+  let mortgageAmount = propertyValue - downPaymentAmount;
+  const originalMortgageAmount = mortgageAmount;
+
+  const monthlyInterestRate = interestRate / 12;
+  const numberOfPayments = amortizationPeriod * 12;
+
+  const monthlyPayment = (mortgageAmount * monthlyInterestRate) /
+                         (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
+
+  let months = 0;
+  let years = 0;
+  let balances = [];
+  let labels = [];
+
+  while (mortgageAmount > 0) {
+    // Apply monthly interest and principal
+    const interestPayment = mortgageAmount * monthlyInterestRate;
+    const principalPayment = monthlyPayment - interestPayment;
+    mortgageAmount -= principalPayment;
+    if (mortgageAmount < 0) mortgageAmount = 0;
+
+    months++;
+    years = months / 12;
+
+    // Every term in months, apply lump sum
+    if (months % (term * 12) === 0) {
+      const lumpSumPayment = originalMortgageAmount * lumpSumPercent;
+      mortgageAmount -= lumpSumPayment;
+      if (mortgageAmount < 0) mortgageAmount = 0;
+    }
+
+    balances.push(mortgageAmount.toFixed(2));
+    labels.push(years.toFixed(2));
+
+    if (months > 1000 * 12) break; // avoid infinite loops
+  }
+
+  document.getElementById('result').innerHTML += `
+    <br><strong>Estimated Years to Pay Off Mortgage with ${lumpSumPercent*100}% Lump Sum Every ${term} Years:</strong>
+    ${years.toFixed(1)} years
+  `;
+
+  // Create or update chart
+  if (chart) chart.destroy(); // clear old chart
+  const ctx = document.getElementById('balanceChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Mortgage Balance ($)',
+        data: balances,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        fill: true,
+        tension: 0.25,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Years' } },
+        y: { title: { display: true, text: 'Mortgage Balance ($)' }, beginAtZero: true }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
