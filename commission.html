@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BC Buyer & Seller Commission Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>BC Commission Calculator</h1>
+    <label for="salePrice">Sale Price ($):</label>
+    <input type="number" id="salePrice" placeholder="Enter sale price" required>
+
+    <button onclick="calculateCommission()">Calculate Commission</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+    function calculateCommission() {
+        var salePrice = parseFloat(document.getElementById('salePrice').value);
+
+        if (isNaN(salePrice) || salePrice <= 0) {
+            alert("Please enter a valid sale price.");
+            return;
+        }
+
+        // Typical BC commission rates
+        var firstRate = 0.07;  // 7% on the first $100,000
+        var secondRate = 0.025; // 2.5% on the remainder
+
+        var firstPortion = 100000;
+        var commission = 0;
+
+        // Calculate commission
+        if (salePrice > firstPortion) {
+            commission = (firstPortion * firstRate) + ((salePrice - firstPortion) * secondRate);
+        } else {
+            commission = salePrice * firstRate;
+        }
+
+        var buyerCommission = commission / 2;  // Assuming 50% goes to buyer agent
+        var sellerCommission = commission / 2; // Assuming 50% goes to seller agent
+
+        // Display result
+        document.getElementById('result').innerHTML = `
+            <p>Total Commission: $${commission.toFixed(2)}</p>
+            <p>Buyer Agent Commission: $${buyerCommission.toFixed(2)}</p>
+            <p>Seller Agent Commission: $${sellerCommission.toFixed(2)}</p>
+        `;
+    }
+</script>
+
+</body>
+</html>
