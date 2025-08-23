@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Meter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .age-container {
+            margin-bottom: 20px;
+        }
+        meter {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h2>Age Meter</h2>
+    <div id="ageMeters"></div>
+
+    <script>
+        const people = [
+            { name: "Howyda Salina", dob: "2022-12-7" },
+            { name: "Mazen Jr", dob: "2025-02-02" },
+            { name: "Alina", dob: "1995-05-19" },
+            { name: "Saleem", dob: "1987-11-13" },
+            { name: "Mazen", dob: "1955-03-14" },
+            { name: "Howyda", dob: "1962-12-26" },
+            { name: "Heba", dob: "1986-10-11" },
+            { name: "Wejdan", dob: "1992-08-14" },
+            { name: "Murad", dob: "1994-12-25" },
+            { name: "Kianna", dob: "1998-11-15" },
+            { name: "Omar", dob: "2022-11-27" }
+        ];
+
+        function calculateAge(dob) {
+            let birthDate = new Date(dob);
+            let now = new Date();
+            let ageDiff = now - birthDate;
+            
+            let years = Math.floor(ageDiff / (1000 * 60 * 60 * 24 * 365.25));
+            let months = Math.floor((ageDiff % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
+            let days = Math.floor((ageDiff % (1000 * 60 * 60 * 24 * 30.44)) / (1000 * 60 * 60 * 24));
+            
+            return { years, months, days };
+        }
+
+        function createMeters() {
+            let container = document.getElementById("ageMeters");
+            container.innerHTML = "";
+
+            people.forEach(person => {
+                let age = calculateAge(person.dob);
+                let ageText = `${age.years} years, ${age.months} months, ${age.days} days`;
+                
+                let div = document.createElement("div");
+                div.classList.add("age-container");
+                div.innerHTML = `<strong>${person.name}</strong>: ${ageText} <br>
+                    <meter value="${age.years}" min="0" max="120"></meter>`;
+                container.appendChild(div);
+            });
+        }
+
+        createMeters();
+        setInterval(createMeters, 3600000); // Update every hour
+    </script>
+</body>
+</html>
