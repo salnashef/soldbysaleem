@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESL Quote Calculator</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+  background-color: #f2f2f2;
+  color: #333;
+  padding: 20px;
+  margin: 0 auto;
+  max-width: 500px;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+  font-weight: bold;
+}
+
+input[type="date"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  color: #333;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #555;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.clear-button {
+  background-color: #777;
+}
+
+.result {
+  margin-top: 20px;
+  font-size: 14px;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.result strong {
+  color: #555;
+}
+
+.result a {
+  color: #fff;
+  text-decoration: none;
+  background-color: #555;
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.error-message {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #f00;
+}
+
+.thank-you-message {
+  margin-top: 20px;
+  font-size: 16px;
+  text-align: center;
+  color: #555;
+}
+
+.apply-now-link {
+  margin-top: 10px;
+  text-align: center;
+}
+
+@media screen and (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  input[type="date"],
+  input[type="number"],
+  select {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+
+  .result {
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  .result strong {
+    font-size: 14px;
+  }
+
+  .result a {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+
+  .error-message {
+    font-size: 14px;
+  }
+
+  .thank-you-message {
+    font-size: 14px;
+  }
+
+  .apply-now-link {
+    font-size: 14px;
+  }
+}
+
+  </style>
+  <script>
+    const priceSchedules = {
+      Canada: {
+        "Semi Intensive 26": {
+          1: 449.00,
+          4: 408.00,
+          8: 404.00,
+          12: 390.00,
+          24: 375.00,
+          36: 369.00
+        },
+        "Intensive 30": {
+          1: 503.00,
+          4: 456.00,
+          8: 452.00,
+          12: 437.00,
+          24: 420.00,
+          36: 413.00
+        },
+        "Super Intensive 40": {
+          1: 588.00,
+          4: 535.00,
+          8: 529.00,
+          12: 511.00,
+          24: 491.00,
+          36: 484.00
+        },
+        "Morning 20": {
+          1: 371.00,
+          4: 338.00,
+          8: 331.00,
+          12: 321.00,
+          24: 307.00,
+          36: 304.00
+        },
+        "Afternoon 20": {
+          1: 371.00,
+          4: 338.00,
+          8: 331.00,
+          12: 321.00,
+          24: 307.00,
+          36: 304.00
+        }
+      },
+      USA: {
+        "Semi Intensive 23": {
+          1: 426.00,
+          4: 387.00,
+          8: 383.00,
+          12: 372.00,
+          24: 356.00,
+          36: 350.00
+        },
+        "Intensive 27": {
+          1: 478.00,
+          4: 434.00,
+          8: 430.00,
+          12: 419.00,
+          24: 402.00,
+          36: 395.00
+        },
+        "Super Intensive 36": {
+          1: 558.00,
+          4: 482.00,
+          8: 477.00,
+          12: 460.00,
+          24: 440.00,
+          36: 433.00
+        },
+        "Morning 20": {
+          1: 353.00,
+          4: 321.00,
+          8: 315.00,
+          12: 306.00,
+          24: 291.00,
+          36: 280.00
+        },
+        "Afternoon 20": {
+          1: 353.00,
+          4: 321.00,
+          8: 315.00,
+          12: 306.00,
+          24: 291.00,
+          36: 280.00
+        }
+      }
+    };
+
+    const homestayPrices = {
+      Canada: {
+        Vancouver: {
+          "Half Board": 336,
+          "Full Board": 350,
+          "No Accommodation": 0
+        },
+        Toronto: {
+          "Half Board": 336,
+          "Full Board": 350,
+          "No Accommodation": 0
+        },
+        Halifax: {
+          "Half Board": 294,
+          "Full Board": 308,
+          "No Accommodation": 0
+        }
+      },
+      USA: {
+        "New York": {
+          "Half Board Outside Manhattan": 560,
+          "Breakfast Only Inside Manhattan": 780,
+          "No Accommodation": 0
+        }
+      }
+    };
+
+    const homestayPlacementFees = {
+      "Half Board": {
+        Canada: 250,
+        USA: 200
+      }
+    };
+
+    const airportTransferPrices = {
+      Canada: {
+        Vancouver: {
+          "Airport Transfer Arrival": 200,
+          "Airport Transfer Departure": 140,
+          "Transfer Two Ways": 340,
+          "No Transfer": 0
+        },
+        Toronto: {
+          "Airport Transfer Arrival": 200,
+          "Airport Transfer Departure": 140,
+          "Transfer Two Ways": 340,
+          "No Transfer": 0
+        },
+        Halifax: {
+          "Airport Transfer Arrival": 200,
+          "Airport Transfer Departure": 140,
+          "Transfer Two Ways": 250,
+          "No Transfer": 0
+        }
+      },
+      USA: {
+        "New York": {
+          "One way JFK": 230,
+          "One way LGA": 250,
+          "One way EWR": 250,
+          "Two ways": 500,
+          "No Transfer": 0
+        }
+      }
+    };
+
+    const materialFeesStructure = {
+      12: 95,
+      24: 190,
+      36: 285,
+      48: 380
+    };
+
+    const insuranceRates = {
+      Canada: 3.1,
+      USA: 4.3
+    };
+
+    const registrationFees = {
+      Canada: 180,
+      USA: 200
+    };
+
+    function updateCampusDropdown() {
+      const country = document.getElementById("country").value;
+      const campusDropdown = document.getElementById("campus");
+
+      campusDropdown.innerHTML = "";
+
+      const campuses = Object.keys(homestayPrices[country]);
+      for (const campus of campuses) {
+        const option = document.createElement("option");
+        option.value = campus;
+        option.textContent = campus;
+        campusDropdown.appendChild(option);
+      }
+
+      updateHomestayTypeDropdown();
+      updateTransferTypeDropdown();
+      clearForm();
+      calculateQuote();
+    }
+
+    function updateHomestayTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const homestayTypeDropdown = document.getElementById("homestay-type");
+
+      homestayTypeDropdown.innerHTML = "";
+
+      const homestayTypes = Object.keys(homestayPrices[country][campus]);
+      for (const homestayType of homestayTypes) {
+        const option = document.createElement("option");
+        option.value = homestayType;
+        option.textContent = homestayType;
+        homestayTypeDropdown.appendChild(option);
+      }
+    }
+
+    function updateProgramTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const programTypeDropdown = document.getElementById("program-type");
+
+      programTypeDropdown.innerHTML = "";
+
+      const programTypes = Object.keys(priceSchedules[country]);
+      for (const programType of programTypes) {
+        const option = document.createElement("option");
+        option.value = programType;
+        option.textContent = programType;
+        programTypeDropdown.appendChild(option);
+      }
+    }
+
+    function updateTransferTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const transferTypeDropdown = document.getElementById("transfer-type");
+
+      transferTypeDropdown.innerHTML = "";
+
+      const transferTypes = Object.keys(airportTransferPrices[country][campus]);
+      for (const transferType of transferTypes) {
+        const option = document.createElement("option");
+        option.value = transferType;
+        option.textContent = transferType;
+        transferTypeDropdown.appendChild(option);
+      }
+    }
+    function calculateQuote() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const startDate = new Date(document.getElementById("start-date").value);
+      const duration = parseInt(document.getElementById("duration").value);
+      const programType = document.getElementById("program-type").value;
+      const homestayType = document.getElementById("homestay-type").value;
+      const homestayDuration = parseInt(document.getElementById("homestay-duration").value);
+      const transferType = document.getElementById("transfer-type").value;
+      const insuranceStartDate = new Date(document.getElementById("insurance-start-date").value);
+      const discountPercentage = parseInt(document.getElementById("discount").value);
+
+      const priceSchedule = priceSchedules[country];
+      if (!priceSchedule) {
+        displayErrorMessage("Invalid country selection.");
+        return;
+      }
+
+      const price = priceSchedule[programType];
+      if (!price) {
+        displayErrorMessage("Invalid program type.");
+        return;
+      }
+
+      let tuition = 0;
+      for (const week in price) {
+        if (duration >= parseInt(week)) {
+          tuition = price[week] * duration;
+        } else {
+          break;
+        }
+      }
+
+      const tuitionAfterDiscount = tuition - (tuition * (discountPercentage / 100));
+
+      let totalHomestayPrice = 0;
+      let homestayPlacementFee = 0;
+      if (homestayType !== "No Accommodation") {
+        const homestayPrice = homestayPrices[country][campus][homestayType];
+        if (homestayPrice === undefined) {
+          displayErrorMessage("Invalid homestay type or campus.");
+          return;
+        }
+
+        totalHomestayPrice = homestayPrice * homestayDuration;
+        homestayPlacementFee = homestayPlacementFees["Half Board"][country] || 0;
+      }
+
+      const transferPrice = airportTransferPrices[country][campus][transferType];
+      if (transferPrice === undefined) {
+        displayErrorMessage("Invalid transfer type.");
+        return;
+      }
+
+      const insuranceDays = Math.floor((duration * 7 - (insuranceStartDate - startDate) / (1000 * 60 * 60 * 24))) + 1;
+      const insurancePrice = insuranceRates[country] * insuranceDays;
+
+      const registrationFee = registrationFees[country] || 0;
+
+      let materialFees = 0;
+      for (const weeks in materialFeesStructure) {
+        if (duration <= parseInt(weeks)) {
+          materialFees = materialFeesStructure[weeks];
+          break;
+        }
+      }
+
+      const totalPrice =
+        tuitionAfterDiscount +
+        totalHomestayPrice +
+        homestayPlacementFee +
+        transferPrice +
+        insurancePrice +
+        registrationFee +
+        materialFees;
+
+      const totalPriceElement = document.getElementById("total-price");
+      totalPriceElement.innerHTML = `
+        <strong class="white-text">Program Type:</strong> ${programType}<br>
+        <strong class="white-text">Duration (weeks):</strong> ${duration}<br>
+        <strong class="white-text">Homestay Type:</strong> ${homestayType}<br>
+        <strong class="white-text">Homestay Duration (weeks):</strong> ${homestayDuration}<br>
+        <strong class="white-text">Transfer Type:</strong> ${transferType}<br>
+        <strong class="white-text">Medical Insurance Days:</strong> ${insuranceDays}<br>
+        <br>
+        <strong class="white-text">Tuition:</strong> $${tuition.toFixed(2)}<br>
+        <strong class="white-text">Discount Given:</strong> $${(tuition - tuitionAfterDiscount).toFixed(2)}<br>
+        <strong class="white-text">Material fees:</strong> $${materialFees.toFixed(2)}<br>
+        <strong class="white-text">Registration fee:</strong> $${registrationFee.toFixed(2)}<br>
+        <strong class="white-text">Homestay fee:</strong> $${totalHomestayPrice.toFixed(2)}<br>
+        <strong class="white-text">Homestay placement fee:</strong> $${homestayPlacementFee.toFixed(2)}<br>
+        <strong class="white-text">Transfer fee:</strong> $${transferPrice.toFixed(2)}<br>
+        <strong class="white-text">Medical insurance fee (${insuranceDays} days):</strong> $${insurancePrice.toFixed(2)}<br>
+        <br>
+        <strong class="white-text">Total:</strong> $${totalPrice.toFixed(2)}
+      `;
+      totalPriceElement.style.display = "block";
+
+      hideErrorMessage();
+
+      document.getElementById("thank-you-message").style.display = "block";
+      document.getElementById("apply-now-link").style.display = "block";
+      document.getElementById("apply-now-link").href = "https://oxfordintcanada.classe365.com/form/view/Application";
+    }
+    function clearForm() {
+      document.getElementById("total-price").style.display = "none";
+      document.getElementById("thank-you-message").style.display = "none";
+      document.getElementById("apply-now-link").style.display = "none";
+    }
+    </script>
+</head>
+<body>
+  <h1>ESL Quote Calculator</h1>
+  <label for="country">Country:</label>
+  <select id="country" onchange="updateCampusDropdown()">
+    <option value="">Select Country</option>
+    <option value="Canada">Canada</option>
+    <option value="USA">USA</option>
+  </select>
+  <label for="campus">Campus:</label>
+  <select id="campus" onchange="updateHomestayTypeDropdown(); updateTransferTypeDropdown();"></select>
+  <label for="start-date">Start Date:</label>
+  <input type="date" id="start-date" required>
+  <label for="duration">Duration (weeks):</label>
+  <input type="number" id="duration" min="1" required>
+  <label for="program-type">Program Type:</label>
+  <select id="program-type">
+    <option value="">Select Program Type</option>
+    <optgroup label="Canada">
+      <option value="Morning 20">Morning 20</option>
+      <option value="Semi Intensive 26">Semi Intensive 26</option>
+      <option value="Intensive 30">Intensive 30</option>
+      <option value="Super Intensive 40">Super Intensive 40</option>
+    </optgroup>
+    <optgroup label="USA">
+      <option value="Morning 20">Morning 20</option>
+      <option value="Semi Intensive 23">Semi Intensive 23</option>
+      <option value="Intensive 27">Intensive 27</option>
+      <option value="Super Intensive 36">Super Intensive 36</option>
+    </optgroup>
+  </select>
+  <label for="homestay-type">Homestay Type:</label>
+  <select id="homestay-type"></select>
+  <label for="homestay-duration">Homestay Duration (weeks):</label>
+  <input type="number" id="homestay-duration" min="0" required>
+  <label for="transfer-type">Transfer Type:</label>
+  <select id="transfer-type"></select>
+  <label for="insurance-start-date">Insurance Start Date:</label>
+  <input type="date" id="insurance-start-date" required>
+  <label for="discount">Discount (%):</label>
+  <input type="number" id="discount" min="0" max="100" value="0">
+  <button onclick="calculateQuote()">Calculate Quote</button>
+  <button class="clear-button" onclick="clearForm()">Clear</button>
+  <div id="error-message" class="result flashing" style="display: none;"></div>
+  <div id="total-price" class="result"></div>
+  <div id="thank-you-message" style="display: none;">Thank you for using our quote calculator!</div>
+  <div id="apply-now-link" class="apply-now-link" style="display: none;">
+    <a href="" target="_blank">Apply Now</a>
+  </div>
+  <script>
+    updateCampusDropdown();
+  </script>
+</body>
+</html>
