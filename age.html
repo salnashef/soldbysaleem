@@ -7,6 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 20px;
         }
         .age-container {
             margin-bottom: 20px;
@@ -14,11 +15,37 @@
         meter {
             width: 100%;
         }
+        #randomNameSection {
+            margin-top: 40px;
+            text-align: center;
+        }
+        button {
+            background-color: #0078d7;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #005fa3;
+        }
+        #randomName {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h2>Age Meter</h2>
     <div id="ageMeters"></div>
+
+    <div id="randomNameSection">
+        <button onclick="showRandomName()">🎲 Guess who is next?</button>
+        <div id="randomName"></div>
+    </div>
 
     <script>
         const people = [
@@ -34,6 +61,21 @@
             { name: "Omar", dob: "2022-11-27" },
             { name: "Murad", dob: "1994-12-25" },
             { name: "Kianna", dob: "1998-11-15" },   
+        ];
+
+        const allNames = [
+            "Mohamed","Ahmed","Omar","Ali","Hassan","Hussein","Tariq","Khaled","Sami","Nour","Layla","Mariam","Yasmin","Amira","Huda","Aisha","Rania","Salma","Farah","Reem",
+            "Fadi","Samir","Nader","Adel","Jamal","Karim","Rami","Bilal","Ziad","Nabil","Samer","Kareem","Tamer","Bashir","Youssef","Mustafa","Mahmoud","Hani","Rashid","Nasser",
+            "Razan","Dina","Sahar","Nada","Manal","Mona","Sara","Rima","Lubna","Hala","Lina","Maha","Joud","Alaa","Hind","Rawan","Dalia","Nisreen","Haifa","Iman",
+            "Adam","Noah","Liam","Mason","Ethan","James","Benjamin","Lucas","Henry","Alexander","Olivia","Emma","Ava","Sophia","Isabella","Charlotte","Amelia","Mia","Harper","Evelyn",
+            "Logan","Jackson","Levi","Sebastian","Mateo","Jack","Owen","Daniel","Matthew","Michael","Ella","Scarlett","Grace","Chloe","Luna","Aria","Ellie","Mila","Nora","Hazel",
+            "Tala","Zain","Yara","Malak","Razan","Haneen","Lujain","Aya","Jana","Nourhan","Sahar","Batoul","Leen","Tamara","Razan","Razan","Heba","Aseel","Shahed","Maram",
+            "David","William","Joseph","Samuel","Carter","Wyatt","John","Luke","Asher","Julian","Layla","Penelope","Lillian","Addison","Eleanor","Abigail","Emily","Elizabeth","Sofia","Victoria",
+            "Ammar","Rafiq","Basel","Sameer","Tameem","Younis","Waleed","Hakeem","Saeed","Zaher","Sultan","Faris","Yazan","Majed","Khalifa","Ayman","Hamza","Feras","Amer","Rabea",
+            "Zahra","Jumana","Maysa","Tima","Reema","Manar","Lujain","Sadeen","Fajr","Hanan","Nadia","Bushra","Walaa","Sondos","Haneen","Asmaa","Samah","Dalal","Fatima","Safaa",
+            "Anas","Ehab","Othman","Rashed","Rakan","Fahd","Yasir","Badr","Talal","Saad","Turki","Sami","Majed","Abdullah","Fawaz","Khalid","Riyad","Marwan","Younes","Aref",
+            "Joud","Kinda","Tina","Ritaj","Wesam","Hanin","Leila","Mira","Carla","Nadine","Dania","Sereen","Tala","Yasmina","Rayan","Maya","Jana","Talia","Nouran","Hala",
+            "Emily","Hannah","Grace","Zoe","Riley","Violet","Aurora","Savannah","Brooklyn","Claire","Camila","Paisley","Skylar","Isla","Bella","Lucy","Naomi","Eliana","Lydia","Ruby"
         ];
 
         function calculateAge(dob) {
@@ -62,6 +104,12 @@
                     <meter value="${age.years}" min="0" max="120"></meter>`;
                 container.appendChild(div);
             });
+        }
+
+        function showRandomName() {
+            const randomIndex = Math.floor(Math.random() * allNames.length);
+            const name = allNames[randomIndex];
+            document.getElementById("randomName").textContent = name;
         }
 
         createMeters();
