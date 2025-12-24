@@ -82,7 +82,7 @@
 
   <script>
     // Embedded Oxford International logo (base64 PNG)
-    const logoDataUrl = "data:image/png;base64,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";
+    const logoDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXQAAABwCAYAAAAOhYvxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAFx9SURBVHhe7Z0HeBzVdcf5vs5JDqm5M9lpT9uAnnaTkJS0ButC0c5kcnZJigi7pIDruiqKKrmWqofURB9Xx9V0QcvbJVhRzHXNCEHHFBA+wkEftbw4Z+gEsCEDtp7t3+uTezfmbn3r17Z3eSndk7b97M+/ddvvm+59p15+z3HAAAA4P86UuEBAAAAeD8UFwAAALiLCg4AAABcRQcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcNf/B8tE3PfbgsnBAAAAAElFTkSuQmCC";
 
     const priceSchedules = {
       Canada: {
@@ -266,6 +266,12 @@
       return highSeasonWeeks;
     }
 
+    function toggleInsurance() {
+      const cb = document.getElementById("opt-out-insurance");
+      const insInput = document.getElementById("insurance-start-date");
+      insInput.disabled = cb.checked;
+    }
+
     function calculateQuote() {
       const country = document.getElementById("country").value;
       const campus = document.getElementById("campus").value;
@@ -277,11 +283,15 @@
       const homestayType = document.getElementById("homestay-type").value;
       const homestayDuration = parseInt(document.getElementById("homestay-duration").value) || 0;
       const transferType = document.getElementById("transfer-type").value;
+
+      const optOutInsurance = document.getElementById("opt-out-insurance").checked;
       const insuranceStartDateValue = document.getElementById("insurance-start-date").value;
-      const insuranceStartDate = insuranceStartDateValue ? new Date(insuranceStartDateValue) : null;
+      const insuranceStartDate = (!optOutInsurance && insuranceStartDateValue) ? new Date(insuranceStartDateValue) : null;
+
       const discountPercentage = parseInt(document.getElementById("discount").value) || 0;
 
-      if (!country || !programType || !duration || !startDate || !insuranceStartDate || !campus) {
+      if (!country || !programType || !duration || !startDate || !campus ||
+          (!optOutInsurance && !insuranceStartDate)) {
         return;
       }
 
@@ -316,11 +326,16 @@
 
       const transferPrice = airportTransferPrices[country][campus][transferType] || 0;
 
-      const totalCourseDays = duration * 7;
-      const diffInMs = insuranceStartDate.getTime() - startDate.getTime();
-      const diffInDays = diffInMs / 86400000;
-      const insuranceDays = Math.max(1, Math.floor(totalCourseDays - diffInDays) + 1);
-      const insurancePrice = (insuranceRates[country] || 0) * insuranceDays;
+      // Insurance (respect opt-out)
+      let insuranceDays = 0;
+      let insurancePrice = 0;
+      if (!optOutInsurance) {
+        const totalCourseDays = duration * 7;
+        const diffInMs = insuranceStartDate.getTime() - startDate.getTime();
+        const diffInDays = diffInMs / 86400000;
+        insuranceDays = Math.max(1, Math.floor(totalCourseDays - diffInDays) + 1);
+        insurancePrice = (insuranceRates[country] || 0) * insuranceDays;
+      }
 
       const registrationFee = registrationFees[country] || 0;
 
@@ -359,7 +374,9 @@
         <strong>Homestay Type:</strong> ${homestayType || "No Accommodation"}<br>
         <strong>Homestay Duration:</strong> ${homestayDuration} weeks<br>
         <strong>Transfer Type:</strong> ${transferType || "No Transfer"}<br>
-        <strong>Insurance Days:</strong> ${insuranceDays}<br><br>
+        <strong>Insurance Days:</strong> ${
+          optOutInsurance ? "0 (opted out)" : insuranceDays
+        }<br><br>
 
         <strong>Tuition (before discount):</strong> $${tuition.toFixed(2)}<br>
         <strong>Discount:</strong> -$${(tuition - tuitionAfterDiscount).toFixed(2)}<br>
@@ -374,7 +391,9 @@
           highSeasonWeeks
         } week(s) × $42/week)<br>
         <strong>Airport Transfer:</strong> $${transferPrice.toFixed(2)}<br>
-        <strong>Medical Insurance:</strong> $${insurancePrice.toFixed(2)}<br><br>
+        <strong>Medical Insurance:</strong> $${insurancePrice.toFixed(2)}${
+          optOutInsurance ? " (opted out)" : ""
+        }<br><br>
 
         <strong style="font-size: 18px;">TOTAL:</strong> <strong>$${total.toFixed(2)}</strong>
       `;
@@ -403,6 +422,8 @@
       document.getElementById("agent-result").innerHTML = "";
       document.getElementById("email-address").value = "";
       document.getElementById("commission").value = "0";
+      document.getElementById("opt-out-insurance").checked = false;
+      document.getElementById("insurance-start-date").disabled = false;
       lastTuitionAfterDiscount = 0;
       lastTotal = 0;
     }
@@ -444,7 +465,6 @@
         doc.addImage(logoDataUrl, "PNG", 10, 10, 50, 20);
         yStart = 35;
       } catch (e) {
-        // if anything fails with the logo, still generate the PDF
         yStart = 10;
       }
 
@@ -559,6 +579,11 @@
 
   <label for="insurance-start-date">Insurance Start Date:</label>
   <input type="date" id="insurance-start-date" required>
+
+  <label style="font-weight: normal;">
+    <input type="checkbox" id="opt-out-insurance" onchange="toggleInsurance()">
+    Opt out from medical insurance
+  </label>
 
   <label for="discount">Discount (%):</label>
   <input type="number" id="discount" min="0" max="100" value="0">
