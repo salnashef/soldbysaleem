@@ -55,6 +55,11 @@
       background-color: #777;
     }
 
+    .apply-button {
+      background-color: #0077cc;
+      margin-top: 10px;
+    }
+
     .result {
       margin-top: 20px;
       font-size: 14px;
@@ -70,17 +75,15 @@
       text-align: center;
       color: #555;
     }
-
-    .apply-now-link {
-      margin-top: 10px;
-      text-align: center;
-    }
   </style>
 
   <!-- jsPDF for PDF download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
+    // Embedded Oxford International logo (base64 PNG)
+    const logoDataUrl = "data:image/png;base64,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";
+
     const priceSchedules = {
       Canada: {
         "Semi Intensive 26": { 1: 460, 4: 430, 8: 415, 12: 400, 24: 390, 36: 380 },
@@ -167,10 +170,12 @@
     };
 
     const materialFeesStructure = { 12: 140, 24: 280, 36: 420, 48: 560 };
-
     const insuranceRates = { Canada: 3.1, USA: 4.3 };
-
     const registrationFees = { Canada: 185, USA: 200 };
+
+    // For commission calculations
+    let lastTuitionAfterDiscount = 0;
+    let lastTotal = 0;
 
     function updateCampusDropdown() {
       const country = document.getElementById("country").value;
@@ -216,11 +221,10 @@
       });
     }
 
-    // ---- High-season helpers (by calendar week) ----
+    // High-season helpers
     function isCanadaHighSeason(date) {
-      const m = date.getMonth() + 1; // 1-12
+      const m = date.getMonth() + 1;
       const d = date.getDate();
-      // June 1 (6/1) to August 31 (8/31)
       if (m === 6 && d >= 1) return true;
       if (m === 7) return true;
       if (m === 8 && d <= 31) return true;
@@ -230,15 +234,11 @@
     function isNewYorkHighSeason(date) {
       const m = date.getMonth() + 1;
       const d = date.getDate();
-      // April 1 - August 31
-      if (m > 4 && m < 8) return true;           // May, June, July
-      if (m === 4 && d >= 1) return true;        // from April 1
-      if (m === 8 && d <= 31) return true;       // up to Aug 31
-
-      // November 1 - December 31
+      if (m > 4 && m < 8) return true;
+      if (m === 4 && d >= 1) return true;
+      if (m === 8 && d <= 31) return true;
       if (m === 11 && d >= 1) return true;
       if (m === 12 && d <= 31) return true;
-
       return false;
     }
 
@@ -260,9 +260,7 @@
           isHigh = isNewYorkHighSeason(weekStart);
         }
 
-        if (isHigh) {
-          highSeasonWeeks++;
-        }
+        if (isHigh) highSeasonWeeks++;
       }
 
       return highSeasonWeeks;
@@ -307,7 +305,7 @@
         homestayPlacementFee = homestayPlacementFees["Half Board"][country] || 0;
       }
 
-      // High-season surcharge (count weeks exactly)
+      // High-season surcharge
       let highSeasonWeeks = 0;
       let highSeasonSurcharge = 0;
 
@@ -316,10 +314,8 @@
         highSeasonSurcharge = highSeasonWeeks * 42;
       }
 
-      // Transfer
       const transferPrice = airportTransferPrices[country][campus][transferType] || 0;
 
-      // Insurance
       const totalCourseDays = duration * 7;
       const diffInMs = insuranceStartDate.getTime() - startDate.getTime();
       const diffInDays = diffInMs / 86400000;
@@ -328,10 +324,9 @@
 
       const registrationFee = registrationFees[country] || 0;
 
-      // Material fees (New York has special rule)
       let materialFees = 0;
       if (country === "USA" && campus === "New York") {
-        materialFees = Math.ceil(duration / 12) * 110; // 110 USD every 12 weeks
+        materialFees = Math.ceil(duration / 12) * 110;
       } else {
         for (const weeks in materialFeesStructure) {
           if (duration <= parseInt(weeks)) {
@@ -350,6 +345,10 @@
         insurancePrice +
         registrationFee +
         materialFees;
+
+      // store for commission calc
+      lastTuitionAfterDiscount = tuitionAfterDiscount;
+      lastTotal = total;
 
       const totalDiv = document.getElementById("total-price");
       totalDiv.innerHTML = `
@@ -382,26 +381,37 @@
       totalDiv.style.display = "block";
 
       document.getElementById("thank-you-message").style.display = "block";
-      document.getElementById("apply-now-link").style.display = "block";
       document.getElementById("download-pdf").style.display = "block";
       document.getElementById("email-quote").style.display = "block";
+      document.getElementById("apply-now-button").style.display = "block";
+      document.getElementById("commission-button").style.display = "block";
+
+      // hide previous agent result when recalculating
+      document.getElementById("agent-result").style.display = "none";
+      document.getElementById("agent-result").innerHTML = "";
     }
 
     function clearForm() {
       document.getElementById("total-price").style.display = "none";
       document.getElementById("total-price").innerHTML = "";
       document.getElementById("thank-you-message").style.display = "none";
-      document.getElementById("apply-now-link").style.display = "none";
       document.getElementById("download-pdf").style.display = "none";
       document.getElementById("email-quote").style.display = "none";
+      document.getElementById("apply-now-button").style.display = "none";
+      document.getElementById("commission-button").style.display = "none";
+      document.getElementById("agent-result").style.display = "none";
+      document.getElementById("agent-result").innerHTML = "";
       document.getElementById("email-address").value = "";
+      document.getElementById("commission").value = "0";
+      lastTuitionAfterDiscount = 0;
+      lastTotal = 0;
     }
 
     function getNextMonday() {
       const today = new Date();
-      const day = today.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
+      const day = today.getDay();
       let diff = (1 - day + 7) % 7;
-      if (diff === 0) diff = 7; // if today is Monday, move to next Monday
+      if (diff === 0) diff = 7;
       const nextMonday = new Date(today);
       nextMonday.setDate(today.getDate() + diff);
       return nextMonday.toISOString().split("T")[0];
@@ -413,22 +423,37 @@
       document.getElementById("insurance-start-date").value = monday;
     }
 
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+    function downloadPDF() {
+      const quoteDiv = document.getElementById("total-price");
+      if (!quoteDiv || quoteDiv.style.display === "none") {
+        alert("Please calculate a quote first.");
+        return;
+      }
 
-      const content = document.getElementById("total-price");
-      if (!content || content.style.display === "none") return;
+      const jspdfLib = window.jspdf;
+      if (!jspdfLib || !jspdfLib.jsPDF) {
+        alert("PDF library failed to load. Check that the jsPDF CDN is not blocked by your browser or network.");
+        return;
+      }
 
-      await doc.html(content, {
-        callback: function (doc) {
-          doc.save("ESL_Quote.pdf");
-        },
-        x: 10,
-        y: 10,
-        width: 180,
-        windowWidth: 600
-      });
+      const doc = new jspdfLib.jsPDF();
+
+      let yStart = 10;
+      try {
+        // add logo in top-left
+        doc.addImage(logoDataUrl, "PNG", 10, 10, 50, 20);
+        yStart = 35;
+      } catch (e) {
+        // if anything fails with the logo, still generate the PDF
+        yStart = 10;
+      }
+
+      const text = quoteDiv.innerText;
+      const lines = doc.splitTextToSize(text, 180);
+
+      doc.setFontSize(12);
+      doc.text(lines, 10, yStart);
+      doc.save("ESL_Quote.pdf");
     }
 
     function emailQuote() {
@@ -444,7 +469,7 @@
         return;
       }
 
-      const text = content.innerText;
+      const text = content.innerText; // commission box is not included
       const subject = "ESL Quote from Oxford International";
       const body =
         "Dear student,\n\nPlease find your ESL quote below:\n\n" +
@@ -460,6 +485,29 @@
         encodeURIComponent(body);
 
       window.location.href = mailtoLink;
+    }
+
+    function applyNow() {
+      window.open("https://forms.iqschools.net/oieg/Application", "_blank");
+    }
+
+    function calculateCommission() {
+      if (!lastTotal || !lastTuitionAfterDiscount) {
+        alert("Please calculate a quote first.");
+        return;
+      }
+
+      const commissionInput = parseFloat(document.getElementById("commission").value) || 0;
+      const commissionAmount = lastTuitionAfterDiscount * (commissionInput / 100);
+      const netFee = lastTotal - commissionAmount;
+
+      const agentDiv = document.getElementById("agent-result");
+      agentDiv.innerHTML = `
+        <strong>Agent Commission (% on tuition):</strong> ${commissionInput.toFixed(2)}%<br>
+        <strong>Commission Amount:</strong> $${commissionAmount.toFixed(2)}<br>
+        <strong>Net Fee (after commission):</strong> $${netFee.toFixed(2)}
+      `;
+      agentDiv.style.display = "block";
     }
 
     window.addEventListener("load", () => {
@@ -531,13 +579,21 @@
     Email Quote
   </button>
 
+  <button id="apply-now-button" class="apply-button" style="display:none;" onclick="applyNow()">
+    Apply Now
+  </button>
+
+  <label for="commission" style="margin-top:15px;">Agent Commission (% on tuition):</label>
+  <input type="number" id="commission" min="0" max="100" value="0">
+
+  <button id="commission-button" style="display:none; margin-top: 8px;" onclick="calculateCommission()">
+    Calculate Agent Commission
+  </button>
+
+  <div id="agent-result" class="result" style="display:none;"></div>
+
   <div class="thank-you-message" id="thank-you-message" style="display: none;">
     Thank you for using our calculator!
   </div>
-
-  <div id="apply-now-link" class="apply-now-link" style="display: none;">
-    <a href="https://forms.iqschools.net/oieg/Application" target="_blank">Apply Now</a>
-  </div>
 </body>
 </html>
--
