@@ -84,6 +84,7 @@
     // Embedded Oxford International logo (base64 PNG)
     const logoDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXQAAABwCAYAAAAOhYvxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAFx9SURBVHhe7Z0HeBzVdcf5vs5JDqm5M9lpT9uAnnaTkJS0ButC0c5kcnZJigi7pIDruiqKKrmWqofURB9Xx9V0QcvbJVhRzHXNCEHHFBA+wkEftbw4Z+gEsCEDtp7t3+uTezfmbn3r17Z3eSndk7b97M+/ddvvm+59p15+z3HAAAA4P86UuEBAAAAeD8UFwAAALiLCg4AAABcRQcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcNf/B8tE3PfbgsnBAAAAAElFTkSuQmCC";
 
+    // Tuition price schedules
     const priceSchedules = {
       Canada: {
         "Semi Intensive 26": { 1: 460, 4: 430, 8: 415, 12: 400, 24: 390, 36: 380 },
@@ -99,6 +100,22 @@
         "Morning 20": { 1: 353, 4: 321, 8: 315, 12: 306, 24: 291, 36: 280 },
         "Afternoon 20": { 1: 353, 4: 321, 8: 315, 12: 306, 24: 291, 36: 280 }
       }
+    };
+
+    // Program options (UI labels) per country
+    const programOptions = {
+      Canada: [
+        { value: "Morning 20", label: "Morning 20" },
+        { value: "Semi Intensive 26", label: "Semi Intensive 26" },
+        { value: "Intensive 30", label: "Intensive 30" },
+        { value: "Super Intensive 40", label: "Super Intensive 40" }
+      ],
+      USA: [
+        { value: "Morning 20", label: "Morning 18/20" }, // uses Morning 20 price
+        { value: "Semi Intensive 23", label: "Semi Intensive 23" },
+        { value: "Intensive 27", label: "Intensive 27" },
+        { value: "Super Intensive 36", label: "Super Intensive 36" }
+      ]
     };
 
     const homestayPrices = {
@@ -182,7 +199,10 @@
       const campusDropdown = document.getElementById("campus");
 
       campusDropdown.innerHTML = "";
-      if (!country) return;
+      if (!country) {
+        updateProgramTypeDropdown(); // clear
+        return;
+      }
 
       Object.keys(homestayPrices[country]).forEach(campus => {
         const option = document.createElement("option");
@@ -193,6 +213,7 @@
 
       updateHomestayTypeDropdown();
       updateTransferTypeDropdown();
+      updateProgramTypeDropdown();
     }
 
     function updateHomestayTypeDropdown() {
@@ -218,6 +239,21 @@
 
       Object.keys(airportTransferPrices[country][campus]).forEach(type => {
         dropdown.innerHTML += `<option value="${type}">${type}</option>`;
+      });
+    }
+
+    function updateProgramTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const dropdown = document.getElementById("program-type");
+      dropdown.innerHTML = "";
+
+      if (!country || !programOptions[country]) return;
+
+      programOptions[country].forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.value;
+        opt.textContent = p.label;
+        dropdown.appendChild(opt);
       });
     }
 
@@ -548,7 +584,7 @@
   </select>
 
   <label for="campus">Campus:</label>
-  <select id="campus" onchange="updateHomestayTypeDropdown(); updateTransferTypeDropdown();"></select>
+  <select id="campus" onchange="updateHomestayTypeDropdown(); updateTransferTypeDropdown(); updateProgramTypeDropdown();"></select>
 
   <label for="start-date">Start Date:</label>
   <input type="date" id="start-date" required>
@@ -557,16 +593,7 @@
   <input type="number" id="duration" min="1" required>
 
   <label for="program-type">Program Type:</label>
-  <select id="program-type">
-    <option value="Morning 20">Morning 20</option>
-    <option value="Semi Intensive 26">Semi Intensive 26</option>
-    <option value="Intensive 30">Intensive 30</option>
-    <option value="Super Intensive 40">Super Intensive 40</option>
-
-    <option value="Semi Intensive 23">Semi Intensive 23</option>
-    <option value="Intensive 27">Intensive 27</option>
-    <option value="Super Intensive 36">Super Intensive 36</option>
-  </select>
+  <select id="program-type"></select>
 
   <label for="homestay-type">Homestay Type:</label>
   <select id="homestay-type"></select>
