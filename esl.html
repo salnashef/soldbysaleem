@@ -82,7 +82,7 @@
 
   <script>
     // Embedded Oxford International logo (base64 PNG)
-    const logoDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXQAAABwCAYAAAAOhYvxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAFx9SURBVHhe7Z0HeBzVdcf5vs5JDqm5M9lpT9uAnnaTkJS0ButC0c5kcnZJigi7pIDruiqKKrmWqofURB9Xx9V0QcvbJVhRzHXNCEHHFBA+wkEftbw4Z+gEsCEDtp7t3+uTezfmbn3r17Z3eSndk7b97M+/ddvvm+59p15+z3HAAAA4P86UuEBAAAAeD8UFwAAALiLCg4AAABcRQcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcNf/B8tE3PfbgsnBAAAAAElFTkSuQmCC";
+    const logoDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXQAAABwCAYAAAAOhYvxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAFx9SURBVHhe7Z0HeBzVdcf5vs5JDqm5M9lpT9uAnnaTkJS0ButC0c5kcnZJigi7pIDruiqKKrmWqofURB9Xx9V0QcvbJVhRzHXNCEHHFBA+wkEftbw4Z+gEsCEDtp7t3+uTezfmbn3r17Z3eSndk7b97M+/ddvvm+59p15+z3HAAAA4P86UuEBAAAAeD8UFwAAALiLCg4AAABcRQcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcNf/B8tE3PfbgsnBAAAAAElFTkSuQmCC";
 
     // Tuition price schedules
     const priceSchedules = {
@@ -111,7 +111,7 @@
         { value: "Super Intensive 40", label: "Super Intensive 40" }
       ],
       USA: [
-        { value: "Morning 20", label: "Morning 18/20" }, // uses Morning 20 price
+        { value: "Morning 20", label: "Morning 18/20" }, // uses Morning 20 price table
         { value: "Semi Intensive 23", label: "Semi Intensive 23" },
         { value: "Intensive 27", label: "Intensive 27" },
         { value: "Super Intensive 36", label: "Super Intensive 36" }
@@ -312,7 +312,7 @@
       const country = document.getElementById("country").value;
       const campus = document.getElementById("campus").value;
       const startDateValue = document.getElementById("start-date").value;
-      const startDate = startDateValue ? new Date(startDateValue) : null;
+      const startDate = startDateValue ? new Date(startDateValue + "T00:00:00") : null;
 
       const duration = parseInt(document.getElementById("duration").value);
       const programType = document.getElementById("program-type").value;
@@ -322,7 +322,9 @@
 
       const optOutInsurance = document.getElementById("opt-out-insurance").checked;
       const insuranceStartDateValue = document.getElementById("insurance-start-date").value;
-      const insuranceStartDate = (!optOutInsurance && insuranceStartDateValue) ? new Date(insuranceStartDateValue) : null;
+      const insuranceStartDate = (!optOutInsurance && insuranceStartDateValue)
+        ? new Date(insuranceStartDateValue + "T00:00:00")
+        : null;
 
       const discountPercentage = parseInt(document.getElementById("discount").value) || 0;
 
@@ -401,6 +403,9 @@
       lastTuitionAfterDiscount = tuitionAfterDiscount;
       lastTotal = total;
 
+      const currencyLabel = (country === "Canada") ? "CAD" :
+                            (country === "USA") ? "USD" : "";
+
       const totalDiv = document.getElementById("total-price");
       totalDiv.innerHTML = `
         <strong>Country:</strong> ${country}<br>
@@ -431,7 +436,8 @@
           optOutInsurance ? " (opted out)" : ""
         }<br><br>
 
-        <strong style="font-size: 18px;">TOTAL:</strong> <strong>$${total.toFixed(2)}</strong>
+        <strong style="font-size: 18px;">TOTAL ${currencyLabel ? "(" + currencyLabel + ")" : ""}:</strong>
+        <strong>$${total.toFixed(2)}</strong>
       `;
       totalDiv.style.display = "block";
 
@@ -462,22 +468,40 @@
       document.getElementById("insurance-start-date").disabled = false;
       lastTuitionAfterDiscount = 0;
       lastTotal = 0;
+      setDefaultDates();
     }
 
+    // ✅ Next Monday using LOCAL time, not UTC
     function getNextMonday() {
       const today = new Date();
-      const day = today.getDay();
+      const day = today.getDay(); // 0=Sun,1=Mon,...6=Sat
+
       let diff = (1 - day + 7) % 7;
-      if (diff === 0) diff = 7;
+      if (diff === 0) diff = 7; // if today is Monday, go to next Monday
+
       const nextMonday = new Date(today);
       nextMonday.setDate(today.getDate() + diff);
-      return nextMonday.toISOString().split("T")[0];
+
+      const year = nextMonday.getFullYear();
+      const month = String(nextMonday.getMonth() + 1).padStart(2, "0");
+      const date = String(nextMonday.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${date}`; // format: yyyy-mm-dd
     }
 
     function setDefaultDates() {
       const monday = getNextMonday();
-      document.getElementById("start-date").value = monday;
-      document.getElementById("insurance-start-date").value = monday;
+      const start = document.getElementById("start-date");
+      const insurance = document.getElementById("insurance-start-date");
+
+      if (start) {
+        start.value = monday;
+        start.min = monday;
+      }
+      if (insurance) {
+        insurance.value = monday;
+        insurance.min = monday;
+      }
     }
 
     function downloadPDF() {
@@ -547,26 +571,33 @@
       window.open("https://forms.iqschools.net/oieg/Application", "_blank");
     }
 
+    // Commission based on Tuition (after discount)
     function calculateCommission() {
-      if (!lastTotal || !lastTuitionAfterDiscount) {
+      if (!lastTuitionAfterDiscount) {
         alert("Please calculate a quote first.");
         return;
       }
 
       const commissionInput = parseFloat(document.getElementById("commission").value) || 0;
+
+      // Commission based ONLY on tuition after discount
       const commissionAmount = lastTuitionAfterDiscount * (commissionInput / 100);
+
+      // Net fee = Total package cost minus commission
       const netFee = lastTotal - commissionAmount;
 
       const agentDiv = document.getElementById("agent-result");
       agentDiv.innerHTML = `
-        <strong>Agent Commission (% on tuition):</strong> ${commissionInput.toFixed(2)}%<br>
+        <strong>Tuition (after discount):</strong> $${lastTuitionAfterDiscount.toFixed(2)}<br>
+        <strong>Commission Rate:</strong> ${commissionInput.toFixed(2)}%<br>
         <strong>Commission Amount:</strong> $${commissionAmount.toFixed(2)}<br>
-        <strong>Net Fee (after commission):</strong> $${netFee.toFixed(2)}
+        <strong>Net Fee to OIEG:</strong> $${netFee.toFixed(2)}
       `;
       agentDiv.style.display = "block";
     }
 
-    window.addEventListener("load", () => {
+    // ✅ Use DOMContentLoaded so inputs definitely exist
+    document.addEventListener("DOMContentLoaded", () => {
       setDefaultDates();
       updateCampusDropdown();
     });
