@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESL Quote Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f2f2f2; color: #333; padding: 20px; margin: 0 auto; max-width: 500px; box-sizing: border-box; }
+    h1 { text-align: center; color: #555; margin-bottom: 20px; }
+    label { display: block; margin-bottom: 10px; color: #555; font-weight: bold; }
+    input[type="date"], input[type="number"], input[type="email"], select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px; background-color: #f9f9f9; color: #333; box-sizing: border-box; }
+    button { background-color: #555; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px; }
+    .clear-button { background-color: #777; }
+    .apply-button { background-color: #0077cc; margin-top: 10px; }
+    .result { margin-top: 20px; font-size: 14px; background-color: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); line-height: 1.6; }
+    .unit-rate { color: #888; font-size: 12px; font-weight: normal; margin-left: 5px; }
+    
+    /* Hide form elements during browser print/PDF save */
+    @media print {
+      body { background-color: #fff; padding: 0; }
+      h1, label, input, select, button, .clear-button, hr, #agent-section { display: none !important; }
+      .result { box-shadow: none; border: 1px solid #eee; display: block !important; }
+      #total-price { margin-top: 0; }
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    const logoDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXQAAABwCAYAAAAOhYvxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAFx9SURBVHhe7Z0HeBzVdcf5vs5JDqm5M9lpT9uAnnaTkJS0ButC0c5kcnZJigi7pIDruiqKKrmWqofURB9Xx9V0QcvbJVhRzHXNCEHHFBA+wkEftbw4Z+gEsCEDtp7t3+uTezfmbn3r17Z3eSndk7b97M+/ddvvm+59p15+z3HAAAA4P86UuEBAAAAeD8UFwAAALiLCg4AAABcRQcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcBUdHAAAAO6igoMAAABcRUcHAACAu6jgAAAAcNf/B8tE3PfbgsnBAAAAAElFTkSuQmCC";
+
+    const priceSchedulesOffshore = {
+      Canada: {
+        "Morning 20": { 1: 390, 4: 360, 8: 350, 12: 340, 24: 330, 36: 320 },
+        "Semi Intensive 26": { 1: 460, 4: 430, 8: 415, 12: 400, 24: 390, 36: 380 },
+        "Intensive 30": { 1: 490, 4: 470, 8: 455, 12: 445, 24: 435, 36: 420 },
+        "Super Intensive 40": { 1: 588, 4: 535, 8: 529, 12: 511, 24: 491, 36: 484 }
+      },
+      USA: {
+        "Morning 20": { 1: 353, 4: 321, 8: 315, 12: 306, 24: 291, 36: 280 },
+        "Semi Intensive 23": { 1: 426, 4: 387, 8: 383, 12: 372, 24: 356, 36: 350 },
+        "Intensive 27": { 1: 477, 4: 433, 8: 429, 12: 417, 24: 399, 36: 392 },
+        "Super Intensive 36": { 1: 558, 4: 507, 8: 502, 12: 487, 24: 467, 36: 459 }
+      }
+    };
+
+    const programOptions = {
+      Canada: [
+        { value: "Morning 20", label: "Morning 20" },
+        { value: "Semi Intensive 26", label: "Semi Intensive 26" },
+        { value: "Intensive 30", label: "Intensive 30" },
+        { value: "Super Intensive 40", label: "Super Intensive 40" }
+      ],
+      USA: [
+        { value: "Morning 20", label: "Morning 18/20" },
+        { value: "Semi Intensive 23", label: "Semi Intensive 23" },
+        { value: "Intensive 27", label: "Intensive 27" },
+        { value: "Super Intensive 36", label: "Super Intensive 36" }
+      ],
+      USA_Onshore: [
+        { value: "Morning 18/20 General", label: "Morning 18/20 (General)" },
+        { value: "Afternoon 18/20 Academic", label: "Afternoon 18/20 (Academic / Elective)" }
+      ]
+    };
+
+    const homestayPrices = {
+      Canada: {
+        Vancouver: { "Half Board": 340, "Full Board": 360, "Roomstay": 329, "No Accommodation": 0 },
+        Toronto: { "Half Board": 340, "Full Board": 360, "Roomstay": 329, "No Accommodation": 0 },
+        Halifax: { "Half Board": 300, "Full Board": 318, "Roomstay": 287, "No Accommodation": 0 }
+      },
+      USA: {
+        "New York": { "Half Board Outside Manhattan": 560, "Breakfast Only Inside Manhattan": 780, "Half-Board Inside Manhattan": 890, "Breakfast Only Outside Manhattan": 485, "No Accommodation": 0 }
+      }
+    };
+
+    const homestayPlacementFees = { Canada: 280, USA: 200 };
+    const registrationFees = { Canada: 185, USA: 200 };
+    const insuranceRates = { Canada: 3.1, USA: 4.3 };
+    const materialFeesStructure = { 12: 140, 24: 280, 36: 420, 48: 560 };
+    const airportTransferPrices = {
+      Canada: {
+        Vancouver: { "Arrival": 200, "Departure": 140, "Two Ways": 340, "No Transfer": 0 },
+        Toronto: { "Arrival": 200, "Departure": 140, "Two Ways": 340, "No Transfer": 0 },
+        Halifax: { "Arrival": 200, "Departure": 140, "Two Ways": 250, "No Transfer": 0 }
+      },
+      USA: {
+        "New York": { "One way JFK": 230, "One way LGA": 250, "One way EWR": 250, "Two ways": 500, "No Transfer": 0 }
+      }
+    };
+
+    let lastTuitionAfterDiscount = 0;
+    let lastTotal = 0;
+
+    function handleCategoryChange() {
+      const category = document.getElementById("student-category").value;
+      document.getElementById("discount-container").style.display = (category === "onshore") ? "none" : "block";
+      if(category === "onshore") document.getElementById("discount").value = 0;
+      updateProgramTypeDropdown();
+    }
+
+    function updateCampusDropdown() {
+      const country = document.getElementById("country").value;
+      const campusDropdown = document.getElementById("campus");
+      campusDropdown.innerHTML = "";
+      if (!country) return;
+      Object.keys(homestayPrices[country]).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; campusDropdown.appendChild(opt);
+      });
+      updateHomestayTypeDropdown(); updateTransferTypeDropdown(); updateProgramTypeDropdown();
+    }
+
+    function updateProgramTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const category = document.getElementById("student-category").value;
+      const dropdown = document.getElementById("program-type");
+      dropdown.innerHTML = "";
+      if (!country) return;
+      let options = (category === "onshore" && country === "USA") ? programOptions.USA_Onshore : 
+                    (country === "USA") ? programOptions.USA : programOptions.Canada;
+      options.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.value; opt.textContent = p.label; dropdown.appendChild(opt);
+      });
+    }
+
+    function updateHomestayTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const dropdown = document.getElementById("homestay-type");
+      dropdown.innerHTML = "";
+      if (country && campus) {
+        Object.keys(homestayPrices[country][campus]).forEach(t => {
+          dropdown.innerHTML += `<option value="${t}">${t}</option>`;
+        });
+      }
+    }
+
+    function updateTransferTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const dropdown = document.getElementById("transfer-type");
+      dropdown.innerHTML = "";
+      if (country && campus) {
+        Object.keys(airportTransferPrices[country][campus]).forEach(t => {
+          dropdown.innerHTML += `<option value="${t}">${t}</option>`;
+        });
+      }
+    }
+
+    function calculateQuote() {
+      const category = document.getElementById("student-category").value;
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const duration = parseInt(document.getElementById("duration").value) || 0;
+      const programType = document.getElementById("program-type").value;
+      const startDateVal = document.getElementById("start-date").value;
+      const startDate = startDateVal ? new Date(startDateVal + "T00:00:00") : null;
+      const homestayType = document.getElementById("homestay-type").value;
+      const homestayWeeks = parseInt(document.getElementById("homestay-duration").value) || 0;
+      const transferType = document.getElementById("transfer-type").value;
+      const discount = parseInt(document.getElementById("discount").value) || 0;
+      const optOutIns = document.getElementById("opt-out-insurance").checked;
+
+      if (!country || !programType || !duration || !startDate) { alert("Please fill required fields."); return; }
+
+      let tuitionRate = 0;
+      if (category === "onshore") {
+        if (country === "Canada") {
+          const rates = { "Morning 20": 200, "Semi Intensive 26": 250, "Intensive 30": 275, "Super Intensive 40": 300 };
+          tuitionRate = rates[programType] || 0;
+        } else {
+          tuitionRate = (programType.includes("Morning")) ? (duration >= 4 ? 170 : 190) : (duration >= 4 ? 140 : 160);
+        }
+      } else {
+        const schedule = priceSchedulesOffshore[country][programType];
+        if (schedule) { for (let w in schedule) { if (duration >= parseInt(w)) tuitionRate = schedule[w]; } }
+      }
+      const tuitionFinal = (tuitionRate * duration) * (1 - discount/100);
+
+      let homestayWeekly = (homestayType !== "No Accommodation") ? homestayPrices[country][campus][homestayType] : 0;
+      let homestayBase = homestayWeekly * homestayWeeks;
+      let placementFee = (homestayType !== "No Accommodation") ? homestayPlacementFees[country] : 0;
+      
+      let hsWeeks = 0;
+      if (homestayType !== "No Accommodation") {
+        for (let i = 0; i < homestayWeeks; i++) {
+          let curr = new Date(startDate); curr.setDate(startDate.getDate() + (i * 7));
+          let m = curr.getMonth() + 1;
+          if (country === "Canada" && (m >= 6 && m <= 8)) hsWeeks++;
+          else if (country === "USA" && ((m >= 4 && m <= 8) || m === 11 || m === 12)) hsWeeks++;
+        }
+      }
+
+      const regFee = registrationFees[country];
+      const transferFee = airportTransferPrices[country][campus][transferType] || 0;
+      let matTotal = (country === "USA" && campus === "New York") ? Math.ceil(duration / 12) * 110 : 0;
+      if (matTotal === 0) { for (let w in materialFeesStructure) { if (duration <= parseInt(w)) { matTotal = materialFeesStructure[w]; break; } } }
+      let insFee = optOutIns ? 0 : (duration * 7 * insuranceRates[country]);
+
+      const total = tuitionFinal + homestayBase + placementFee + (hsWeeks * 42) + regFee + transferFee + matTotal + insFee;
+      lastTuitionAfterDiscount = tuitionFinal; lastTotal = total;
+
+      document.getElementById("total-price").innerHTML = `
+        <div style="margin-bottom: 15px; border-bottom: 2px solid #555; padding-bottom: 10px;">
+          <strong>STUDENT QUOTE: ${category.toUpperCase()}</strong><br>
+          Campus: ${campus}, ${country} | Duration: ${duration} weeks
+        </div>
+        Tuition: $${tuitionFinal.toFixed(2)} <span class="unit-rate">($${tuitionRate}/wk × ${duration} wks)</span><br>
+        Registration: $${regFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
+        Materials: $${matTotal.toFixed(2)} <span class="unit-rate">($${(matTotal/duration).toFixed(2)}/wk)</span><br>
+        Homestay: $${homestayBase.toFixed(2)} <span class="unit-rate">($${homestayWeekly}/wk × ${homestayWeeks} wks)</span><br>
+        Placement Fee: $${placementFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
+        High Season: $${(hsWeeks * 42).toFixed(2)} <span class="unit-rate">($42/wk × ${hsWeeks} weeks)</span><br>
+        Insurance: $${insFee.toFixed(2)} <span class="unit-rate">($${insuranceRates[country]}/day)</span><br>
+        Transfer: $${transferFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br><br>
+        <strong style="font-size:1.3em; color:#0077cc;">TOTAL: $${total.toFixed(2)} ${country === "Canada" ? "CAD" : "USD"}</strong>
+      `;
+      document.getElementById("total-price").style.display = "block";
+      document.getElementById("action-buttons").style.display = "block";
+      document.getElementById("agent-section").style.display = "block";
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const content = document.getElementById("total-price").innerText;
+      
+      doc.addImage(logoDataUrl, 'PNG', 10, 10, 50, 20);
+      doc.setFontSize(12);
+      doc.text(content, 10, 40);
+      doc.save("ESL_Quote.pdf");
+    }
+
+    function clearForm() { location.reload(); }
+    function calculateCommission() {
+      const rate = parseFloat(document.getElementById("commission").value) || 0;
+      const amt = lastTuitionAfterDiscount * (rate / 100);
+      document.getElementById("agent-result").innerHTML = `<strong>Commission:</strong> $${amt.toFixed(2)}<br><strong>Net to OIEG:</strong> $${(lastTotal - amt).toFixed(2)}`;
+      document.getElementById("agent-result").style.display = "block";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date();
+      const nextMon = new Date(today.setDate(today.getDate() + (1 - today.getDay() + 7) % 7));
+      document.getElementById("start-date").value = nextMon.toISOString().split('T')[0];
+      updateCampusDropdown();
+    });
+  </script>
+</head>
+<body>
+  <h1>ESL Quote Calculator</h1>
+
+  <label>Student Category:</label>
+  <select id="student-category" onchange="handleCategoryChange()">
+    <option value="offshore">Offshore Student</option>
+    <option value="onshore">Onshore Student</option>
+  </select>
+
+  <label>Country:</label>
+  <select id="country" onchange="updateCampusDropdown()">
+    <option value="">Select Country</option>
+    <option value="Canada">Canada</option>
+    <option value="USA">USA</option>
+  </select>
+
+  <label>Campus:</label>
+  <select id="campus" onchange="updateHomestayTypeDropdown(); updateTransferTypeDropdown(); updateProgramTypeDropdown();"></select>
+
+  <label>Start Date:</label>
+  <input type="date" id="start-date">
+
+  <label>Duration (weeks):</label>
+  <input type="number" id="duration" min="1" value="1">
+
+  <label>Program Type:</label>
+  <select id="program-type"></select>
+
+  <label>Homestay Type:</label>
+  <select id="homestay-type"></select>
+
+  <label>Homestay Duration (weeks):</label>
+  <input type="number" id="homestay-duration" min="0" value="0">
+
+  <label>Transfer Type:</label>
+  <select id="transfer-type"></select>
+
+  <label>Insurance:</label>
+  <label style="font-weight: normal;"><input type="checkbox" id="opt-out-insurance"> Opt out from insurance</label>
+
+  <div id="discount-container">
+    <label>Discount (% on tuition):</label>
+    <input type="number" id="discount" min="0" max="100" value="0">
+  </div>
+
+  <button onclick="calculateQuote()">Calculate Quote</button>
+  <button class="clear-button" onclick="clearForm()">Clear</button>
+
+  <div id="total-price" class="result" style="display: none;"></div>
+
+  <div id="action-buttons" style="display:none; margin-top:10px;">
+    <button onclick="downloadPDF()">Download Quote as PDF</button>
+    <button class="apply-button" onclick="window.open('https://forms.iqschools.net/oieg/Application', '_blank')">Apply Now</button>
+  </div>
+
+  <div id="agent-section" style="display:none; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
+    <label>Agent Commission (% on tuition):</label>
+    <input type="number" id="commission" value="0">
+    <button onclick="calculateCommission()">Calculate Commission</button>
+    <div id="agent-result" class="result" style="display:none;"></div>
+  </div>
+</body>
+</html>
