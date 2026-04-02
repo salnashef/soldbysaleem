@@ -12,14 +12,6 @@
     .apply-button { background-color: #0077cc; margin-top: 10px; }
     .result { margin-top: 20px; font-size: 14px; background-color: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); line-height: 1.6; }
     .unit-rate { color: #888; font-size: 12px; font-weight: normal; margin-left: 5px; }
-    
-    /* Hide form elements during browser print/PDF save */
-    @media print {
-      body { background-color: #fff; padding: 0; }
-      h1, label, input, select, button, .clear-button, hr, #agent-section { display: none !important; }
-      .result { box-shadow: none; border: 1px solid #eee; display: block !important; }
-      #total-price { margin-top: 0; }
-    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -193,8 +185,16 @@
 
       const regFee = registrationFees[country];
       const transferFee = airportTransferPrices[country][campus][transferType] || 0;
-      let matTotal = (country === "USA" && campus === "New York") ? Math.ceil(duration / 12) * 110 : 0;
-      if (matTotal === 0) { for (let w in materialFeesStructure) { if (duration <= parseInt(w)) { matTotal = materialFeesStructure[w]; break; } } }
+      
+      let matTotal = 0;
+      if (country === "USA" && campus === "New York") { 
+        matTotal = Math.ceil(duration / 12) * 110; 
+      } else { 
+        for (let w in materialFeesStructure) { 
+          if (duration <= parseInt(w)) { matTotal = materialFeesStructure[w]; break; } 
+        } 
+      }
+      
       let insFee = optOutIns ? 0 : (duration * 7 * insuranceRates[country]);
 
       const total = tuitionFinal + homestayBase + placementFee + (hsWeeks * 42) + regFee + transferFee + matTotal + insFee;
@@ -203,7 +203,9 @@
       document.getElementById("total-price").innerHTML = `
         <div style="margin-bottom: 15px; border-bottom: 2px solid #555; padding-bottom: 10px;">
           <strong>STUDENT QUOTE: ${category.toUpperCase()}</strong><br>
-          Campus: ${campus}, ${country} | Duration: ${duration} weeks
+          Campus: ${campus}, ${country} | Duration: ${duration} weeks<br>
+          Homestay: ${homestayType} | Transfer: ${transferType}<br>
+          Medical Insurance: ${optOutIns ? 'No (Opted Out)' : 'Yes'}
         </div>
         Tuition: $${tuitionFinal.toFixed(2)} <span class="unit-rate">($${tuitionRate}/wk × ${duration} wks)</span><br>
         Registration: $${regFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
@@ -224,14 +226,23 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       const content = document.getElementById("total-price").innerText;
-      
       doc.addImage(logoDataUrl, 'PNG', 10, 10, 50, 20);
       doc.setFontSize(12);
       doc.text(content, 10, 40);
       doc.save("ESL_Quote.pdf");
     }
 
+    function emailQuote() {
+      const email = document.getElementById("email-address").value.trim();
+      if (!email) { alert("Please enter an email address."); return; }
+      const content = document.getElementById("total-price").innerText;
+      const subject = "ESL Quote - Oxford International";
+      const body = "Dear Student,\n\nPlease find your ESL quote breakdown below:\n\n" + content + "\n\nBest regards,\nOxford International";
+      window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
     function clearForm() { location.reload(); }
+    
     function calculateCommission() {
       const rate = parseFloat(document.getElementById("commission").value) || 0;
       const amt = lastTuitionAfterDiscount * (rate / 100);
@@ -284,7 +295,7 @@
   <label>Transfer Type:</label>
   <select id="transfer-type"></select>
 
-  <label>Insurance:</label>
+  <label>Medical Insurance:</label>
   <label style="font-weight: normal;"><input type="checkbox" id="opt-out-insurance"> Opt out from insurance</label>
 
   <div id="discount-container">
@@ -298,7 +309,10 @@
   <div id="total-price" class="result" style="display: none;"></div>
 
   <div id="action-buttons" style="display:none; margin-top:10px;">
-    <button onclick="downloadPDF()">Download Quote as PDF</button>
+    <button onclick="downloadPDF()" style="width: 49%; display: inline-block;">Download PDF</button>
+    <label style="margin-top: 15px;">Send to Email:</label>
+    <input type="email" id="email-address" placeholder="student@example.com">
+    <button onclick="emailQuote()" style="width: 100%;">Email Quote</button>
     <button class="apply-button" onclick="window.open('https://forms.iqschools.net/oieg/Application', '_blank')">Apply Now</button>
   </div>
 
