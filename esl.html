@@ -1,3 +1,59 @@
+
+Claude finished the response
+
+<!DOCTYPE html> <html> <head> <title>ESL Quote Calculator</title> <style> body { font-family: Arial, sans-serif; background-color: #f2f2f2; color: #333; padding: 20px; margin: 0 auto; max-width: 600px; box-sizing: border-box; } h1 { text-align: center; color: #555; margin-bottom: 2
+
+pasted
+
+add 50% discount on material fees if student book 8 or more weeks
+
+
+Devised discount structure for extended student bookings
+Devised discount structure for extended student bookings
+I added the material fee discount. Here's what changed:
+
+In calculateGeneric, materials are now computed as usual, then if duration >= 8, the total is cut in half. Both the discounted and full price are returned (matTotal, matFullPrice, matDiscountApplied).
+Single quote view and Copy Breakdown now show "50% off $X — 8+ wks" next to Materials whenever the discount applies, otherwise they show the normal per-week rate as before.
+The comparison table still shows the discounted matTotal since all standard programs use week-based duration, so it stays consistent automatically.
+This applies across the board — Canada, USA, and NYC material fee structures — since the 50% cut is applied after whichever calculation produces the base fee.
+
+
+Ran a command, read a file
+Ran a command, read a file
+Note: this applies to any duration of 8 weeks or more (offshore or onshore, Canada or USA). If you meant a different threshold or want it limited to certain program types, let me know and I'll adjust.
+
+
+Esl quote calculator
+Code · HTML 
+code
+
+
+Edited 3 files, ran a command
+Edited 3 files, ran a command
+Fixed both occurrences of the em dash (replaced with a comma). No emojis were present in the code, so nothing else needed changing.
+
+
+Ran a command, read a file
+Ran a command, read a file
+I'll keep this in mind for the rest of our work together too.
+
+
+Esl quote calculator
+Code · HTML 
+can you put all code I want to copy it
+
+
+Thinking about consolidating code for easy copying
+Thinking about consolidating code for easy copying
+Claude's response was interrupted.
+fix format
+
+
+Thinking about identifying formatting issues and applying corrections
+Thinking about identifying formatting issues and applying corrections
+Confirmed, no em dashes or emojis remain in the code (the ✓ is a checkmark symbol used as a UI status indicator, not an emoji, but let me know if you'd like that swapped too). Here's the full file:
+
+html
 <!DOCTYPE html>
 <html>
 <head>
@@ -318,7 +374,7 @@
       const text = lines.join("\n");
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById("copy-btn");
-        btn.textContent = "✓ Copied!";
+        btn.textContent = "Copied!";
         btn.classList.add("copied");
         setTimeout(() => { btn.textContent = "Copy Breakdown"; btn.classList.remove("copied"); }, 2000);
       }).catch(() => {
@@ -327,7 +383,7 @@
         ta.value = text; document.body.appendChild(ta); ta.select();
         document.execCommand("copy"); document.body.removeChild(ta);
         const btn = document.getElementById("copy-btn");
-        btn.textContent = "✓ Copied!";
+        btn.textContent = "Copied!";
         setTimeout(() => { btn.textContent = "Copy Breakdown"; }, 2000);
       });
     }
@@ -393,3 +449,425 @@
   </div>
 </body>
 </html>
+I also swapped the "✓ Copied!" checkmark button text to plain "Copied!" in this version, since you're avoiding emoji-style symbols. Let me know if you'd like it changed back or want the checkmark restored.
+
+fix its 50% off if its 8 weeks or less
+
+
+Thinking about applying a 50% discount for items with 8 weeks or less duration
+Thinking about applying a 50% discount for items with 8 weeks or less duration
+Fixed — the discount now applies when duration is 8 weeks or less, not 8+.
+
+
+Ran a command, read a file
+Ran a command, read a file
+Want the full updated code pasted here again too, or is the file good?
+
+
+Esl quote calculator
+Code · HTML 
+
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+
+
+Esl quote calculator · HTML
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESL Quote Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f2f2f2; color: #333; padding: 20px; margin: 0 auto; max-width: 600px; box-sizing: border-box; }
+    h1 { text-align: center; color: #555; margin-bottom: 20px; }
+    label { display: block; margin-bottom: 10px; color: #555; font-weight: bold; }
+    input[type="date"], input[type="number"], input[type="email"], select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom: 10px; background-color: #f9f9f9; color: #333; box-sizing: border-box; }
+    button { background-color: #555; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px; }
+    .clear-button { background-color: #777; }
+    .compare-button { background-color: #444; }
+    .apply-button { background-color: #0077cc; margin-top: 10px; }
+    .copy-button { background-color: #28a745; margin-top: 5px; }
+    .copy-button.copied { background-color: #1e7e34; }
+    .result { margin-top: 20px; font-size: 13px; background-color: #fff; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); line-height: 1.6; overflow-x: auto; }
+    .unit-rate { color: #888; font-size: 11px; font-weight: normal; margin-left: 5px; }
+    .discount-line { color: #c0392b; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 450px; }
+    th, td { border: 1px solid #ddd; padding: 8px 4px; text-align: center; vertical-align: top; }
+    th { background-color: #f5f5f5; font-weight: bold; }
+    .row-label { text-align: left; font-weight: bold; background-color: #fafafa; }
+    .total-row { background-color: #eef7ff; font-weight: bold; font-size: 14px; }
+    hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
+    @media print {
+      @page { margin: 1cm; size: A4; }
+      html, body { height: auto; overflow: hidden; }
+      body > * { display: none !important; }
+      #total-price { display: block !important; visibility: visible; margin: 0; padding: 10px; box-shadow: none; border-radius: 0; font-size: 11px; line-height: 1.4; overflow: visible; }
+    }
+  </style>
+ 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+ 
+  <script>
+    const priceSchedulesOffshore = {
+      Canada: {
+        "Morning 20": { 1: 390, 4: 360, 8: 350, 12: 340, 24: 330, 36: 320 },
+        "Semi Intensive 26": { 1: 460, 4: 430, 8: 415, 12: 400, 24: 390, 36: 380 },
+        "Intensive 30": { 1: 490, 4: 470, 8: 455, 12: 445, 24: 435, 36: 420 },
+        "Super Intensive 40": { 1: 588, 4: 535, 8: 529, 12: 511, 24: 491, 36: 484 }
+      },
+      USA: {
+        "Morning 20": { 1: 353, 4: 321, 8: 315, 12: 306, 24: 291, 36: 280 },
+        "Semi Intensive 23": { 1: 426, 4: 387, 8: 383, 12: 372, 24: 356, 36: 350 },
+        "Intensive 27": { 1: 477, 4: 433, 8: 429, 12: 417, 24: 399, 36: 392 },
+        "Super Intensive 36": { 1: 558, 4: 507, 8: 502, 12: 487, 24: 467, 36: 459 }
+      }
+    };
+ 
+    const registrationFees = { Canada: 185, USA: 200 };
+    const insuranceRates = { Canada: 3.1, USA: 4.3 };
+    const materialFeesStructure = { 12: 140, 24: 280, 36: 420, 48: 560 };
+    const homestayPlacementFees = { Canada: 280, USA: 200 };
+    const homestayPrices = {
+      Canada: {
+        Vancouver: { "Half Board": 340, "Full Board": 360, "Roomstay": 329, "No Accommodation": 0 },
+        Toronto: { "Half Board": 340, "Full Board": 360, "Roomstay": 329, "No Accommodation": 0 },
+        Halifax: { "Half Board": 300, "Full Board": 318, "Roomstay": 287, "No Accommodation": 0 }
+      },
+      USA: {
+        "New York": { "Half Board Outside Manhattan": 560, "Breakfast Only Inside Manhattan": 780, "Half-Board Inside Manhattan": 890, "Breakfast Only Outside Manhattan": 485, "No Accommodation": 0 }
+      }
+    };
+    const airportTransferPrices = {
+      Canada: {
+        Vancouver: { "Arrival": 200, "Departure": 140, "Two Ways": 340, "No Transfer": 0 },
+        Toronto: { "Arrival": 200, "Departure": 140, "Two Ways": 340, "No Transfer": 0 },
+        Halifax: { "Arrival": 200, "Departure": 140, "Two Ways": 250, "No Transfer": 0 }
+      },
+      USA: {
+        "New York": { "One way JFK": 230, "One way LGA": 250, "One way EWR": 250, "Two ways": 500, "No Transfer": 0 }
+      }
+    };
+ 
+    let lastTuitionAfterDiscount = 0;
+    let lastTotal = 0;
+ 
+    function handleCategoryChange() {
+      const category = document.getElementById("student-category").value;
+      document.getElementById("discount-container").style.display = (category === "onshore") ? "none" : "block";
+      updateProgramTypeDropdown();
+    }
+ 
+    function updateCampusDropdown() {
+      const country = document.getElementById("country").value;
+      const campusDropdown = document.getElementById("campus");
+      campusDropdown.innerHTML = "";
+      if (!country) return;
+      Object.keys(homestayPrices[country]).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c; campusDropdown.appendChild(opt);
+      });
+      updateProgramTypeDropdown();
+    }
+ 
+    function updateProgramTypeDropdown() {
+      const country = document.getElementById("country").value;
+      const category = document.getElementById("student-category").value;
+      const dropdown = document.getElementById("program-type");
+      dropdown.innerHTML = "";
+      if (!country) return;
+      let options = (country === "Canada") ? 
+        [{value:"Morning 20", label:"Morning 20"}, {value:"Semi Intensive 26", label:"Semi Intensive 26"}, {value:"Intensive 30", label:"Intensive 30"}, {value:"Super Intensive 40", label:"Super Intensive 40"}] :
+        (category === "onshore") ? 
+        [{value:"Morning 18/20 General", label:"Morning 18/20 (General)"}, {value:"Afternoon 18/20 Academic", label:"Afternoon 18/20 (Academic)"}] :
+        [{value:"Morning 20", label:"Morning 18/20"}, {value:"Semi Intensive 23", label:"Semi Intensive 23"}, {value:"Intensive 27", label:"Intensive 27"}, {value:"Super Intensive 36", label:"Super Intensive 36"}];
+      options.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.value; opt.textContent = p.label; dropdown.appendChild(opt);
+      });
+      updateHomestayAndTransfer();
+    }
+ 
+    function updateHomestayAndTransfer() {
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const hDrop = document.getElementById("homestay-type");
+      const tDrop = document.getElementById("transfer-type");
+      hDrop.innerHTML = ""; tDrop.innerHTML = "";
+      if (country && campus) {
+        Object.keys(homestayPrices[country][campus]).forEach(t => hDrop.innerHTML += `<option value="${t}">${t}</option>`);
+        Object.keys(airportTransferPrices[country][campus]).forEach(t => tDrop.innerHTML += `<option value="${t}">${t}</option>`);
+      }
+    }
+ 
+    function calculateGeneric(prog) {
+      const category = document.getElementById("student-category").value;
+      const country = document.getElementById("country").value;
+      const campus = document.getElementById("campus").value;
+      const duration = parseInt(document.getElementById("duration").value) || 0;
+      const startDateVal = document.getElementById("start-date").value;
+      const startDate = new Date(startDateVal + "T00:00:00");
+      const homestayType = document.getElementById("homestay-type").value;
+      const homestayWeeks = parseInt(document.getElementById("homestay-duration").value) || 0;
+      const transferType = document.getElementById("transfer-type").value;
+      const discount = parseInt(document.getElementById("discount").value) || 0;
+      const optOutIns = document.getElementById("opt-out-insurance").checked;
+ 
+      let rate = 0;
+      if (category === "onshore") {
+        if (country === "Canada") {
+          const rates = { "Morning 20": 200, "Semi Intensive 26": 250, "Intensive 30": 275, "Super Intensive 40": 300 };
+          rate = rates[prog] || 0;
+        } else {
+          rate = (prog.includes("Morning")) ? (duration >= 4 ? 170 : 190) : (duration >= 4 ? 140 : 160);
+        }
+      } else {
+        const schedule = priceSchedulesOffshore[country][prog];
+        if (schedule) { for (let w in schedule) { if (duration >= parseInt(w)) rate = schedule[w]; } }
+      }
+      const tuitionBeforeDiscount = rate * duration;
+      const discountAmount = tuitionBeforeDiscount * (discount / 100);
+      const tuitionFinal = tuitionBeforeDiscount - discountAmount;
+ 
+      let hWeekly = (homestayType !== "No Accommodation") ? homestayPrices[country][campus][homestayType] : 0;
+      let hBase = hWeekly * homestayWeeks;
+      let pFee = (homestayType !== "No Accommodation") ? homestayPlacementFees[country] : 0;
+      let hsWeeks = 0;
+      if (homestayType !== "No Accommodation") {
+        for (let i = 0; i < homestayWeeks; i++) {
+          let curr = new Date(startDate); curr.setDate(startDate.getDate() + (i * 7));
+          let m = curr.getMonth() + 1;
+          if (country === "Canada" && (m >= 6 && m <= 8)) hsWeeks++;
+          else if (country === "USA" && ((m >= 4 && m <= 8) || m === 11 || m === 12)) hsWeeks++;
+        }
+      }
+      const regFee = registrationFees[country];
+      const transferFee = airportTransferPrices[country][campus][transferType] || 0;
+      let matTotal = (country === "USA" && campus === "New York") ? Math.ceil(duration / 12) * 110 : 0;
+      if (matTotal === 0) { for (let w in materialFeesStructure) { if (duration <= parseInt(w)) { matTotal = materialFeesStructure[w]; break; } } }
+      const matDiscountApplied = duration > 0 && duration <= 8;
+      const matFullPrice = matTotal;
+      if (matDiscountApplied) { matTotal = matTotal * 0.5; }
+      let insFee = optOutIns ? 0 : (duration * 7 * insuranceRates[country]);
+ 
+      return { rate, tuitionBeforeDiscount, discountAmount, discount, tuitionFinal, regFee, matTotal, matFullPrice, matDiscountApplied, hBase, hWeekly, pFee, hsWeeks, hsTotal: (hsWeeks * 42), insFee, transferFee, total: (tuitionFinal + hBase + pFee + (hsWeeks*42) + regFee + transferFee + matTotal + insFee), homestayType, transferType, optOutIns };
+    }
+ 
+    function calculateQuote() {
+      const prog = document.getElementById("program-type").value;
+      const category = document.getElementById("student-category").value;
+      const duration = document.getElementById("duration").value;
+      const campus = document.getElementById("campus").value;
+      const country = document.getElementById("country").value;
+      const d = calculateGeneric(prog);
+      
+      lastTuitionAfterDiscount = d.tuitionFinal;
+      lastTotal = d.total;
+ 
+      const discountLine = d.discount > 0
+        ? `Tuition Discount (${d.discount}%): <span class="discount-line">-$${d.discountAmount.toFixed(2)}</span> <span class="unit-rate">(${d.discount}% off $${d.tuitionBeforeDiscount.toFixed(2)})</span><br>`
+        : '';
+ 
+      const materialsLabel = d.matDiscountApplied
+        ? `Materials: $${d.matTotal.toFixed(2)} <span class="unit-rate">(50% off $${d.matFullPrice.toFixed(2)}, 8 wks or less)</span><br>`
+        : `Materials: $${d.matTotal.toFixed(2)} <span class="unit-rate">($${(d.matTotal/duration).toFixed(2)}/wk)</span><br>`;
+      
+      document.getElementById("total-price").innerHTML = `
+        <div style="border-bottom: 2px solid #555; padding-bottom:10px; margin-bottom:10px;">
+          <strong>STUDENT QUOTE: ${category.toUpperCase()}</strong><br>
+          Program: ${prog} | Campus: ${campus}, ${country}<br>
+          Duration: ${duration} weeks<br>
+          Accommodation: ${d.homestayType}<br>
+          Airport Transfer: ${d.transferType}<br>
+          Medical Insurance: ${d.optOutIns ? 'Opted Out' : 'Included'}
+        </div>
+        Tuition (before discount): $${d.tuitionBeforeDiscount.toFixed(2)} <span class="unit-rate">($${d.rate}/wk × ${duration} wks)</span><br>
+        ${discountLine}
+        Tuition (after discount): $${d.tuitionFinal.toFixed(2)}<br>
+        Registration: $${d.regFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
+        ${materialsLabel}
+        Homestay: $${d.hBase.toFixed(2)} <span class="unit-rate">($${d.hWeekly}/wk × ${document.getElementById("homestay-duration").value} wks)</span><br>
+        Placement Fee: $${d.pFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
+        High Season: $${d.hsTotal.toFixed(2)} <span class="unit-rate">($42/wk × ${d.hsWeeks} hs wks)</span><br>
+        Insurance: $${d.insFee.toFixed(2)} <span class="unit-rate">($${insuranceRates[country]}/day × ${duration*7} days)</span><br>
+        Transfer: $${d.transferFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br><br>
+        <strong style="font-size:1.3em; color:#0077cc;">TOTAL: $${d.total.toFixed(2)}</strong>
+      `;
+      document.getElementById("total-price").style.display = "block";
+      document.getElementById("action-buttons").style.display = "block";
+      document.getElementById("agent-section").style.display = "block";
+    }
+ 
+    function calculateComparison() {
+      const programs = ["Morning 20", "Semi Intensive 26", "Intensive 30"];
+      const results = programs.map(p => ({ name: p, data: calculateGeneric(p) }));
+      let html = `<strong>SIDE-BY-SIDE COMPARISON</strong><table><tr><th>Fee Item</th>`;
+      results.forEach(r => html += `<th>${r.name}</th>`);
+      html += `</tr>`;
+      const rows = [
+        {label:"Tuition (before discount)",key:"tuitionBeforeDiscount"},
+        {label:"Discount",key:"discountAmount",negative:true},
+        {label:"Tuition (after discount)",key:"tuitionFinal"},
+        {label:"Registration",key:"regFee"},
+        {label:"Materials",key:"matTotal"},
+        {label:"Homestay",key:"hBase"},
+        {label:"Placement",key:"pFee"},
+        {label:"High Season",key:"hsTotal"},
+        {label:"Insurance",key:"insFee"},
+        {label:"Transfer",key:"transferFee"}
+      ];
+      rows.forEach(row => {
+        html += `<tr><td class="row-label">${row.label}</td>`;
+        results.forEach(r => {
+          const val = r.data[row.key];
+          const display = row.negative && val > 0 ? `-$${val.toFixed(2)}` : `$${val.toFixed(2)}`;
+          const style = row.negative && val > 0 ? ' style="color:#c0392b;"' : '';
+          html += `<td${style}>${display}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `<tr class="total-row"><td class="row-label">TOTAL</td>`;
+      results.forEach(r => html += `<td>$${r.data.total.toFixed(2)}</td>`);
+      html += `</tr></table>`;
+      document.getElementById("total-price").innerHTML = html;
+      document.getElementById("total-price").style.display = "block";
+      document.getElementById("action-buttons").style.display = "block";
+      document.getElementById("agent-section").style.display = "none";
+    }
+ 
+    function calculateCommission() {
+      const rate = parseFloat(document.getElementById("commission").value) || 0;
+      const amt = lastTuitionAfterDiscount * (rate / 100);
+      document.getElementById("agent-result").innerHTML = `<strong>Commission:</strong> $${amt.toFixed(2)}<br><strong>Net to OIEG:</strong> $${(lastTotal - amt).toFixed(2)}`;
+      document.getElementById("agent-result").style.display = "block";
+    }
+ 
+    function emailQuote() {
+      const email = document.getElementById("email-address").value;
+      if(!email) { alert("Please enter email"); return; }
+      const content = document.getElementById("total-price").innerText;
+      window.location.href = `mailto:${email}?subject=ESL Quote&body=${encodeURIComponent(content)}`;
+    }
+ 
+    function copyQuote() {
+      const resultEl = document.getElementById("total-price");
+      // Build a clean plain-text version from the visible text
+      const lines = [];
+      const prog = document.getElementById("program-type").value;
+      const category = document.getElementById("student-category").value;
+      const duration = document.getElementById("duration").value;
+      const campus = document.getElementById("campus").value;
+      const country = document.getElementById("country").value;
+      const d = calculateGeneric(prog);
+ 
+      lines.push("========================================");
+      lines.push("         ESL QUOTE BREAKDOWN");
+      lines.push("========================================");
+      lines.push(`Student Category : ${category.toUpperCase()}`);
+      lines.push(`Program          : ${prog}`);
+      lines.push(`Campus           : ${campus}, ${country}`);
+      lines.push(`Duration         : ${duration} weeks`);
+      lines.push(`Accommodation    : ${d.homestayType}`);
+      lines.push(`Airport Transfer : ${d.transferType}`);
+      lines.push(`Medical Insurance: ${d.optOutIns ? "Opted Out" : "Included"}`);
+      lines.push("----------------------------------------");
+      lines.push(`Tuition (gross)  : $${d.tuitionBeforeDiscount.toFixed(2)}  ($${d.rate}/wk × ${duration} wks)`);
+      if (d.discount > 0) {
+        lines.push(`Discount (${String(d.discount).padEnd(3)}%)  : -$${d.discountAmount.toFixed(2)}`);
+        lines.push(`Tuition (net)    : $${d.tuitionFinal.toFixed(2)}`);
+      }
+      lines.push(`Registration     : $${d.regFee.toFixed(2)}  (Flat)`);
+      if (d.matDiscountApplied) {
+        lines.push(`Materials        : $${d.matTotal.toFixed(2)}  (50% off $${d.matFullPrice.toFixed(2)}, 8 wks or less)`);
+      } else {
+        lines.push(`Materials        : $${d.matTotal.toFixed(2)}  ($${(d.matTotal/duration).toFixed(2)}/wk)`);
+      }
+      lines.push(`Homestay         : $${d.hBase.toFixed(2)}  ($${d.hWeekly}/wk × ${document.getElementById("homestay-duration").value} wks)`);
+      lines.push(`Placement Fee    : $${d.pFee.toFixed(2)}  (Flat)`);
+      lines.push(`High Season      : $${d.hsTotal.toFixed(2)}  ($42/wk × ${d.hsWeeks} wks)`);
+      lines.push(`Insurance        : $${d.insFee.toFixed(2)}  ($${insuranceRates[country]}/day × ${parseInt(duration)*7} days)`);
+      lines.push(`Transfer         : $${d.transferFee.toFixed(2)}  (Flat)`);
+      lines.push("========================================");
+      lines.push(`TOTAL            : $${d.total.toFixed(2)}`);
+      lines.push("========================================");
+ 
+      const text = lines.join("\n");
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copy-btn");
+        btn.textContent = "✓ Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy Breakdown"; btn.classList.remove("copied"); }, 2000);
+      }).catch(() => {
+        // Fallback
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        const btn = document.getElementById("copy-btn");
+        btn.textContent = "✓ Copied!";
+        setTimeout(() => { btn.textContent = "Copy Breakdown"; }, 2000);
+      });
+    }
+ 
+    function clearForm() { location.reload(); }
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date();
+      const nextMon = new Date(today.setDate(today.getDate() + (1 - today.getDay() + 7) % 7));
+      document.getElementById("start-date").value = nextMon.toISOString().split('T')[0];
+      updateCampusDropdown();
+    });
+  </script>
+</head>
+<body>
+  <h1>ESL Quote Calculator</h1>
+  <label>Student Category:</label>
+  <select id="student-category" onchange="handleCategoryChange()">
+    <option value="offshore">Offshore Student</option>
+    <option value="onshore">Onshore Student</option>
+  </select>
+  <label>Country:</label>
+  <select id="country" onchange="updateCampusDropdown()">
+    <option value="">Select Country</option>
+    <option value="Canada">Canada</option>
+    <option value="USA">USA</option>
+  </select>
+  <label>Campus:</label>
+  <select id="campus" onchange="updateHomestayAndTransfer()"></select>
+  <label>Start Date:</label>
+  <input type="date" id="start-date">
+  <label>Duration (weeks):</label>
+  <input type="number" id="duration" min="1" value="1">
+  <label>Program Type:</label>
+  <select id="program-type"></select>
+  <label>Homestay Type:</label>
+  <select id="homestay-type"></select>
+  <label>Homestay Duration (weeks):</label>
+  <input type="number" id="homestay-duration" min="0" value="0">
+  <label>Transfer Type:</label>
+  <select id="transfer-type"></select>
+  <label style="font-weight: normal;"><input type="checkbox" id="opt-out-insurance"> Opt out from insurance</label>
+  <div id="discount-container">
+    <label>Discount (% on tuition):</label>
+    <input type="number" id="discount" min="0" max="100" value="0">
+  </div>
+  <button onclick="calculateQuote()">Calculate Single Quote</button>
+  <button class="compare-button" onclick="calculateComparison()">Calculate Comparison</button>
+  <button class="clear-button" onclick="clearForm()">Clear</button>
+  <div id="total-price" class="result" style="display: none;"></div>
+  <div id="action-buttons" style="display:none; margin-top:10px;">
+    <button onclick="window.print()">Download PDF</button>
+    <button id="copy-btn" class="copy-button" onclick="copyQuote()">Copy Breakdown</button>
+    <label style="margin-top:10px;">Email to Student:</label>
+    <input type="email" id="email-address" placeholder="student@example.com">
+    <button onclick="emailQuote()">Send Email Quote</button>
+  </div>
+  <div id="agent-section" style="display:none;">
+    <hr>
+    <label>Agent Commission (%):</label>
+    <input type="number" id="commission" value="0">
+    <button onclick="calculateCommission()">Calculate Net</button>
+    <div id="agent-result" class="result" style="display:none;"></div>
+  </div>
+</body>
+</html>
+ 
