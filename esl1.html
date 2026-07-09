@@ -27,7 +27,6 @@
     .unit-rate { color: #888; font-size: 11px; font-weight: normal; margin-left: 4px; }
     .discount-line { color: #c0392b; font-weight: bold; }
     .asp-highlight { color: #534AB7; font-weight: bold; font-size: 1.1em; }
-    .field-hint { font-weight: normal; color: #999; font-size: 11px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 450px; font-size: 12px; }
     th, td { border: 1px solid #ddd; padding: 7px 5px; text-align: center; vertical-align: top; }
     th { background-color: #f5f5f5; font-weight: bold; }
@@ -103,14 +102,6 @@
   </div>
 </div>
 
-<div>
-  <label>Student type <span class="field-hint">(minor supplement fee applies to Canada only)</span></label>
-  <select id="student-type">
-    <option value="Adult" selected>Adult</option>
-    <option value="Minor">Minor</option>
-  </select>
-</div>
-
 <label style="font-weight:normal; font-size:13px; margin-bottom:10px;">
   <input type="checkbox" id="opt-out-insurance"> Opt out from insurance
 </label>
@@ -169,9 +160,7 @@ const priceSchedulesOffshore = {
 };
 const registrationFees      = { Canada:185, USA:200 };
 const insuranceRates        = { Canada:3.1, USA:4.3 };
-const materialFeesStructure = { 12:140, 24:280, 36:420, 48:560 };
 const homestayPlacementFees = { Canada:280, USA:200 };
-const MINOR_SUPPLEMENT_WEEKLY_RATE = 49;
 const homestayPrices = {
   Canada: {
     Vancouver: { "Half Board":340, "Full Board":360, "Roomstay":329, "No Accommodation":0 },
@@ -253,6 +242,22 @@ function updateHomestayAndTransfer() {
   }
 }
 
+/* ── material fee rule ──
+   1-8 weeks   : $70 (half price)
+   9-12 weeks  : $140
+   13-24 weeks : $280
+   25-36 weeks : $420
+   37-48 weeks : $560
+   ...and so on, +$140 per additional 12-week block
+   New York campus keeps its own $110-per-block rule */
+function calculateMaterialFee(duration, country, campus) {
+  if (country === "USA" && campus === "New York") {
+    return Math.ceil(duration / 12) * 110;
+  }
+  if (duration <= 8) return 70;
+  return Math.ceil(duration / 12) * 140;
+}
+
 /* ── core calculation ── */
 function calculateGeneric(prog) {
   const cat         = document.getElementById("student-category").value;
@@ -265,7 +270,6 @@ function calculateGeneric(prog) {
   const transferType  = document.getElementById("transfer-type").value;
   const discount      = parseInt(document.getElementById("discount").value) || 0;
   const optOutIns     = document.getElementById("opt-out-insurance").checked;
-  const studentType   = document.getElementById("student-type").value;
 
   let rate = 0;
   if (cat === "onshore") {
@@ -299,16 +303,14 @@ function calculateGeneric(prog) {
 
   const regFee     = registrationFees[country];
   const transferFee = airportTransferPrices[country][campus][transferType] || 0;
-  let matTotal = country === "USA" && campus === "New York" ? Math.ceil(duration / 12) * 110 : 0;
-  if (matTotal === 0) { for (let w in materialFeesStructure) { if (duration <= parseInt(w)) { matTotal = materialFeesStructure[w]; break; } } }
+  const matTotal = calculateMaterialFee(duration, country, campus);
   const insFee = optOutIns ? 0 : duration * 7 * insuranceRates[country];
-  const supplementFee = (country === "Canada" && studentType === "Minor") ? MINOR_SUPPLEMENT_WEEKLY_RATE * duration : 0;
 
   return {
     rate, tuitionBeforeDiscount, discountAmount, discount, tuitionFinal,
     regFee, matTotal, hBase, hWeekly, pFee, hsWeeks, hsTotal: hsWeeks * 42,
-    insFee, transferFee, studentType, supplementFee,
-    total: tuitionFinal + hBase + pFee + hsWeeks * 42 + regFee + transferFee + matTotal + insFee + supplementFee,
+    insFee, transferFee,
+    total: tuitionFinal + hBase + pFee + hsWeeks * 42 + regFee + transferFee + matTotal + insFee,
     homestayType, transferType, optOutIns, duration, campus, country, cat, prog
   };
 }
@@ -331,16 +333,12 @@ function calculateQuote() {
     ? `Tuition discount (${d.discount}%): <span class="discount-line">-$${d.discountAmount.toFixed(2)}</span>
        <span class="unit-rate">(${d.discount}% off $${d.tuitionBeforeDiscount.toFixed(2)})</span><br>` : '';
 
-  const supplementLine = d.supplementFee > 0
-    ? `Minor supplement fee: $${d.supplementFee.toFixed(2)} <span class="unit-rate">($${MINOR_SUPPLEMENT_WEEKLY_RATE}/wk × ${duration} wks)</span><br>` : '';
-
   document.getElementById("total-price").innerHTML = `
     <div style="border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px;">
       <strong>Student quote: ${d.cat.toUpperCase()}</strong><br>
       Program: ${prog} | Campus: ${campus}, ${country}<br>
       Duration: ${duration} weeks | Accommodation: ${d.homestayType}<br>
-      Transfer: ${d.transferType} | Insurance: ${d.optOutIns ? 'Opted out' : 'Included'}<br>
-      Student type: ${d.studentType}${d.supplementFee > 0 ? ' (minor supplement applies)' : ''}
+      Transfer: ${d.transferType} | Insurance: ${d.optOutIns ? 'Opted out' : 'Included'}
     </div>
     Tuition (before discount): $${d.tuitionBeforeDiscount.toFixed(2)} <span class="unit-rate">($${d.rate}/wk × ${duration} wks)</span><br>
     ${discountLine}
@@ -351,8 +349,7 @@ function calculateQuote() {
     Placement fee: $${d.pFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
     High season: $${d.hsTotal.toFixed(2)} <span class="unit-rate">($42/wk × ${d.hsWeeks} hs wks)</span><br>
     Insurance: $${d.insFee.toFixed(2)} <span class="unit-rate">($${insuranceRates[country]}/day × ${duration*7} days)</span><br>
-    Transfer: $${d.transferFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
-    ${supplementLine}<br>
+    Transfer: $${d.transferFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br><br>
     <strong style="font-size:1.3em;color:#0077cc;">TOTAL: $${d.total.toFixed(2)}</strong>
   `;
   document.getElementById("total-price").style.display = "block";
@@ -384,8 +381,7 @@ function calculateComparison() {
     { label:"Placement",                 key:"pFee" },
     { label:"High season",               key:"hsTotal" },
     { label:"Insurance",                 key:"insFee" },
-    { label:"Transfer",                  key:"transferFee" },
-    { label:"Minor supplement",          key:"supplementFee" }
+    { label:"Transfer",                  key:"transferFee" }
   ];
   rows.forEach(row => {
     html += `<tr><td class="row-label">${row.label}</td>`;
@@ -522,7 +518,6 @@ function downloadPDF() {
         ["Accommodation",    d.homestayType],
         ["Airport Transfer", d.transferType],
         ["Medical Insurance",d.optOutIns ? "Opted out" : "Included"],
-        ["Student Type",     d.studentType],
         ["Start Date",       document.getElementById("start-date").value]
       ];
       doc.setFontSize(9); doc.setFont("helvetica","normal");
@@ -553,9 +548,6 @@ function downloadPDF() {
         ["Insurance",             "$"+d.insFee.toFixed(2),   "$"+insuranceRates[country]+"/day \xD7 "+(duration*7)+" days"],
         ["Airport transfer",      "$"+d.transferFee.toFixed(2), "Flat"]
       );
-      if (d.supplementFee > 0) {
-        fees.push(["Minor supplement fee", "$"+d.supplementFee.toFixed(2), "$"+MINOR_SUPPLEMENT_WEEKLY_RATE+"/wk \xD7 "+duration+" wks"]);
-      }
 
       fees.forEach(function(row, idx) {
         checkPage(7);
@@ -645,8 +637,7 @@ function downloadPDF() {
         {label:"Placement",              key:"pFee"},
         {label:"High season",            key:"hsTotal"},
         {label:"Insurance",              key:"insFee"},
-        {label:"Transfer",               key:"transferFee"},
-        {label:"Minor supplement",       key:"supplementFee"}
+        {label:"Transfer",               key:"transferFee"}
       ];
       rows.forEach(function(row, idx) {
         checkPage(8);
@@ -728,7 +719,6 @@ function copyQuote() {
     "========================================",
     "Program          : " + prog,
     "Duration         : " + duration + " weeks",
-    "Student type     : " + d.studentType,
     "Tuition (gross)  : $" + d.tuitionBeforeDiscount.toFixed(2),
     d.discount > 0 ? "Discount         : -$" + d.discountAmount.toFixed(2) : null,
     "Tuition (net)    : $" + d.tuitionFinal.toFixed(2),
@@ -739,7 +729,6 @@ function copyQuote() {
     "High season      : $" + d.hsTotal.toFixed(2),
     "Insurance        : $" + d.insFee.toFixed(2),
     "Transfer         : $" + d.transferFee.toFixed(2),
-    d.supplementFee > 0 ? "Minor supplement : $" + d.supplementFee.toFixed(2) : null,
     "========================================",
     "TOTAL            : $" + d.total.toFixed(2),
     "========================================"
@@ -759,7 +748,6 @@ function clearForm() {
   document.getElementById("commission").value        = 0;
   document.getElementById("enrolment-fee").value     = 0;
   document.getElementById("opt-out-insurance").checked = false;
-  document.getElementById("student-type").value       = "Adult";
   document.getElementById("total-price").style.display    = "none";
   document.getElementById("action-buttons").style.display = "none";
   document.getElementById("agent-section").style.display  = "none";
