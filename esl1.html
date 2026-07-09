@@ -546,7 +546,7 @@ function downloadPDF() {
       }
       fees.push(
         { label:"Registration",          value:"$"+d.regFee.toFixed(2),    note:"Flat" },
-        { label:"Materials",             value:"$"+d.matTotal.toFixed(2),  note:"$"+(d.matTotal/d.duration).toFixed(2)+"/wk"+(d.matDiscountApplied ? " (50% \u22648wk disc.)" : "") },
+        { label:"Materials",             value:"$"+d.matTotal.toFixed(2),  note:"$"+(d.matTotal/d.duration).toFixed(2)+"/wk"+(d.matDiscountApplied ? " (50% disc., 8wks or less)" : "") },
         { label:"Homestay ("+homestayDur+" wks)", value:"$"+d.hBase.toFixed(2), note:"$"+d.hWeekly+"/wk" },
         { label:"Placement fee",         value:"$"+d.pFee.toFixed(2),     note:"Flat" },
         { label:"High season surcharge", value:"$"+d.hsTotal.toFixed(2),  note:"$42/wk \xD7 "+d.hsWeeks+" wks" },
