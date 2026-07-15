@@ -1,86 +1,486 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BC Buyer & Seller Commission Calculator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        label {
-            display: block;
-            margin: 10px 0 5px;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .result {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BC Real Estate Calculators</title>
+<style>
+    :root{
+        --ink:#1c2a26;
+        --paper:#f6f4ef;
+        --line:#d8d2c4;
+        --brand:#1f5f4f;
+        --brand-dark:#153f34;
+        --warn:#8a5a1f;
+        --warn-bg:#faf1e2;
+        --muted:#6b6459;
+        --white:#ffffff;
+    }
+    *{box-sizing:border-box;}
+    body{
+        font-family:'Georgia', 'Times New Roman', serif;
+        background:var(--paper);
+        color:var(--ink);
+        margin:0;
+        padding:32px 16px 48px;
+    }
+    .page{
+        max-width:520px;
+        margin:0 auto;
+    }
+    .container{
+        background:var(--white);
+        border:1px solid var(--line);
+        border-radius:6px;
+        padding:28px 28px 32px;
+    }
+    .container + .container{
+        margin-top:28px;
+    }
+    h1{
+        font-size:20px;
+        letter-spacing:0.02em;
+        margin:0 0 4px;
+        color:var(--brand-dark);
+    }
+    .subtitle{
+        font-family:Arial, sans-serif;
+        font-size:12px;
+        color:var(--muted);
+        margin:0 0 24px;
+        text-transform:uppercase;
+        letter-spacing:0.08em;
+    }
+    label{
+        font-family:Arial, sans-serif;
+        display:block;
+        font-size:13px;
+        color:var(--muted);
+        margin:14px 0 5px;
+    }
+    input[type="number"]{
+        width:100%;
+        padding:10px 12px;
+        font-size:15px;
+        border:1px solid var(--line);
+        border-radius:4px;
+        font-family:Arial, sans-serif;
+        background:#fbfaf7;
+        color:var(--ink);
+    }
+    input[type="number"]:focus{
+        outline:2px solid var(--brand);
+        outline-offset:1px;
+    }
+    .row{
+        display:flex;
+        gap:12px;
+    }
+    .row > div{
+        flex:1;
+    }
+    fieldset{
+        border:1px solid var(--line);
+        border-radius:4px;
+        margin-top:16px;
+        padding:12px 14px 14px;
+    }
+    legend{
+        font-family:Arial, sans-serif;
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:0.08em;
+        color:var(--muted);
+        padding:0 6px;
+    }
+    .item-row{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-top:8px;
+    }
+    .item-row:first-child{
+        margin-top:0;
+    }
+    .item-row input[type="checkbox"]{
+        width:16px;
+        height:16px;
+        flex:none;
+    }
+    .item-row .item-name{
+        font-family:Arial, sans-serif;
+        font-size:14px;
+        flex:1;
+    }
+    .item-row input[type="number"]{
+        width:100px;
+        padding:6px 8px;
+        font-size:14px;
+    }
+    .side-toggle{
+        font-family:Arial, sans-serif;
+        display:flex;
+        gap:8px;
+        margin-top:14px;
+    }
+    .side-toggle button{
+        margin-top:0;
+        flex:1;
+        background:var(--white);
+        color:var(--brand-dark);
+        border:1px solid var(--brand);
+        font-weight:normal;
+        padding:8px;
+    }
+    .side-toggle button.active{
+        background:var(--brand);
+        color:var(--white);
+        font-weight:bold;
+    }
+    button{
+        margin-top:20px;
+        width:100%;
+        padding:12px;
+        background:var(--brand);
+        color:var(--white);
+        border:none;
+        border-radius:4px;
+        font-family:Arial, sans-serif;
+        font-size:14px;
+        font-weight:bold;
+        letter-spacing:0.02em;
+        cursor:pointer;
+    }
+    button:hover{
+        background:var(--brand-dark);
+    }
+    .result{
+        margin-top:24px;
+        font-family:Arial, sans-serif;
+        display:none;
+    }
+    .result.visible{
+        display:block;
+    }
+    .block{
+        border-top:1px solid var(--line);
+        padding-top:16px;
+        margin-top:16px;
+    }
+    .block-label{
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:0.08em;
+        color:var(--muted);
+        margin-bottom:8px;
+    }
+    .line{
+        display:flex;
+        justify-content:space-between;
+        font-size:14px;
+        padding:4px 0;
+        color:var(--ink);
+    }
+    .line.deduction{
+        color:var(--muted);
+    }
+    .line.net{
+        font-size:17px;
+        font-weight:bold;
+        color:var(--brand-dark);
+        border-top:1px dashed var(--line);
+        margin-top:6px;
+        padding-top:10px;
+    }
+    .notes{
+        margin-top:20px;
+        background:var(--warn-bg);
+        border:1px solid #e6d3ac;
+        border-radius:4px;
+        padding:14px 16px;
+    }
+    .notes-title{
+        font-family:Arial, sans-serif;
+        font-size:13px;
+        font-weight:bold;
+        color:var(--warn);
+        margin-bottom:8px;
+    }
+    .notes ul{
+        margin:0;
+        padding-left:18px;
+        font-family:Arial, sans-serif;
+        font-size:13px;
+        color:#5c4a2a;
+        line-height:1.6;
+    }
+</style>
 </head>
 <body>
+<div class="page">
 
-<div class="container">
-    <h1>BC Commission Calculator</h1>
-    <label for="salePrice">Sale Price ($):</label>
-    <input type="number" id="salePrice" placeholder="Enter sale price" required>
+    <!-- CALCULATOR 1: AGENT COMMISSION -->
+    <div class="container">
+        <h1>BC Commission Calculator</h1>
+        <p class="subtitle">Gross commission &amp; your net payout</p>
 
-    <button onclick="calculateCommission()">Calculate Commission</button>
+        <label for="ac_salePrice">Sale Price ($)</label>
+        <input type="number" id="ac_salePrice" placeholder="e.g. 769000">
 
-    <div class="result" id="result"></div>
+        <div class="row">
+            <div>
+                <label for="ac_splitPct">Your Split (%)</label>
+                <input type="number" id="ac_splitPct" value="85">
+            </div>
+            <div>
+                <label for="ac_dealFee">Deal Fee ($)</label>
+                <input type="number" id="ac_dealFee" value="200">
+            </div>
+        </div>
+
+        <label>Your Side</label>
+        <div class="side-toggle">
+            <button type="button" id="ac_btnBuyer" class="active" onclick="acSetSide('buyer')">Buyer Agent</button>
+            <button type="button" id="ac_btnSeller" onclick="acSetSide('seller')">Seller Agent</button>
+        </div>
+
+        <button onclick="calcAgentCommission()">Calculate</button>
+
+        <div class="result" id="ac_result">
+            <div class="block">
+                <div class="block-label">Gross Commission</div>
+                <div class="line"><span>Total Commission (both sides)</span><span id="ac_totalComm"></span></div>
+                <div class="line"><span>Buyer Agent Commission</span><span id="ac_buyerComm"></span></div>
+                <div class="line"><span>Seller Agent Commission</span><span id="ac_sellerComm"></span></div>
+            </div>
+
+            <div class="block">
+                <div class="block-label" id="ac_netLabel">Your Net Payout</div>
+                <div class="line"><span id="ac_sideCommLabel">Your Side Commission</span><span id="ac_sideComm"></span></div>
+                <div class="line deduction"><span id="ac_splitLabel">Brokerage Split (15%)</span><span id="ac_splitAmount"></span></div>
+                <div class="line deduction"><span>Deal Fee</span><span id="ac_feeAmount"></span></div>
+                <div class="line net"><span>You Take Home</span><span id="ac_netPayout"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALCULATOR 2: SELLER NET PROCEEDS -->
+    <div class="container">
+        <h1>Seller Net Proceeds Calculator</h1>
+        <p class="subtitle">Estimated cost to sell &amp; funds to seller</p>
+
+        <label for="sp_salePrice">Sale Price ($)</label>
+        <input type="number" id="sp_salePrice" placeholder="e.g. 769000">
+
+        <label for="sp_mortgageBalance">Outstanding Mortgage Balance ($)</label>
+        <input type="number" id="sp_mortgageBalance" placeholder="e.g. 350000" value="0">
+
+        <div class="row">
+            <div>
+                <label for="sp_firstRate">Rate on First $100k (%)</label>
+                <input type="number" id="sp_firstRate" value="7">
+            </div>
+            <div>
+                <label for="sp_secondRate">Rate on Remainder (%)</label>
+                <input type="number" id="sp_secondRate" value="2.5">
+            </div>
+        </div>
+
+        <fieldset>
+            <legend>Marketing &amp; Listing Fees</legend>
+            <div class="item-row">
+                <input type="checkbox" id="sp_chkPhotos" checked>
+                <span class="item-name">Photography</span>
+                <input type="number" id="sp_costPhotos" value="150">
+            </div>
+            <div class="item-row">
+                <input type="checkbox" id="sp_chkVideo" checked>
+                <span class="item-name">Video</span>
+                <input type="number" id="sp_costVideo" value="500">
+            </div>
+            <div class="item-row">
+                <input type="checkbox" id="sp_chkFloorplan" checked>
+                <span class="item-name">Floor Plan</span>
+                <input type="number" id="sp_costFloorplan" value="300">
+            </div>
+            <div class="item-row">
+                <input type="checkbox" id="sp_chkMls" checked>
+                <span class="item-name">MLS Fee</span>
+                <input type="number" id="sp_costMls" value="100">
+            </div>
+            <div class="item-row">
+                <input type="checkbox" id="sp_chkDigital" checked>
+                <span class="item-name">Digital Marketing (social/ads)</span>
+                <input type="number" id="sp_costDigital" value="250">
+            </div>
+        </fieldset>
+
+        <div class="row">
+            <div>
+                <label for="sp_legalFees">Legal / Notary Fees ($)</label>
+                <input type="number" id="sp_legalFees" value="1000">
+            </div>
+            <div>
+                <label for="sp_gstRate">GST on Commission (%)</label>
+                <input type="number" id="sp_gstRate" value="5">
+            </div>
+        </div>
+
+        <button onclick="calcSellerNet()">Calculate Net Proceeds</button>
+
+        <div class="result" id="sp_result">
+            <div class="block">
+                <div class="block-label">Deductions</div>
+                <div class="line"><span>Sale Price</span><span id="sp_outSalePrice"></span></div>
+                <div class="line deduction"><span>Outstanding Mortgage Payoff</span><span id="sp_outMortgage"></span></div>
+                <div class="line deduction"><span>Real Estate Commission (total)</span><span id="sp_outCommission"></span></div>
+                <div class="line deduction"><span>GST on Commission</span><span id="sp_outGst"></span></div>
+                <div class="line deduction"><span>Marketing &amp; Listing Fees</span><span id="sp_outMarketing"></span></div>
+                <div class="line deduction"><span>Legal / Notary Fees</span><span id="sp_outLegal"></span></div>
+                <div class="line net"><span>Estimated Net Proceeds</span><span id="sp_outNet"></span></div>
+            </div>
+        </div>
+
+        <div class="notes">
+            <div class="notes-title">Other costs to check with the seller</div>
+            <ul>
+                <li>Mortgage prepayment penalty — if the mortgage is being paid out before maturity, the lender may charge an interest rate differential (IRD) or 3 months' interest. This varies by lender and can be significant; get an exact discharge statement from the lender before listing.</li>
+                <li>Mortgage discharge / reconveyance admin fee — typically $75 to $300, separate from any penalty.</li>
+                <li>Property tax adjustment — prorated between seller and buyer as of the completion date.</li>
+                <li>Strata fees, move-out fee, or estoppel certificate fee, if applicable.</li>
+                <li>Home / tenant insurance cancellation and utility final readings.</li>
+            </ul>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    function calculateCommission() {
-        var salePrice = parseFloat(document.getElementById('salePrice').value);
+    function formatMoney(n){
+        var sign = n < 0 ? '-' : '';
+        return sign + '$' + Math.abs(n).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
 
-        if (isNaN(salePrice) || salePrice <= 0) {
-            alert("Please enter a valid sale price.");
+    // ---------- CALCULATOR 1: AGENT COMMISSION ----------
+    var acSide = 'buyer';
+
+    function acSetSide(side){
+        acSide = side;
+        document.getElementById('ac_btnBuyer').classList.toggle('active', side === 'buyer');
+        document.getElementById('ac_btnSeller').classList.toggle('active', side === 'seller');
+        if(document.getElementById('ac_result').classList.contains('visible')){
+            calcAgentCommission();
+        }
+    }
+
+    function calcAgentCommission(){
+        var salePrice = parseFloat(document.getElementById('ac_salePrice').value);
+        var splitPct = parseFloat(document.getElementById('ac_splitPct').value);
+        var dealFee = parseFloat(document.getElementById('ac_dealFee').value);
+
+        if(isNaN(salePrice) || salePrice <= 0){
+            alert('Please enter a valid sale price.');
             return;
         }
+        if(isNaN(splitPct) || splitPct < 0 || splitPct > 100){
+            alert('Please enter a valid split percentage.');
+            return;
+        }
+        if(isNaN(dealFee) || dealFee < 0){
+            dealFee = 0;
+        }
 
-        // Typical BC commission rates
-        var firstRate = 0.07;  // 7% on the first $100,000
-        var secondRate = 0.025; // 2.5% on the remainder
-
+        var firstRate = 0.07;
+        var secondRate = 0.025;
         var firstPortion = 100000;
-        var commission = 0;
+        var commission;
 
-        // Calculate commission
-        if (salePrice > firstPortion) {
+        if(salePrice > firstPortion){
             commission = (firstPortion * firstRate) + ((salePrice - firstPortion) * secondRate);
         } else {
             commission = salePrice * firstRate;
         }
 
-        var buyerCommission = commission / 2;  // Assuming 50% goes to buyer agent
-        var sellerCommission = commission / 2; // Assuming 50% goes to seller agent
+        var buyerCommission = commission / 2;
+        var sellerCommission = commission / 2;
+        var sideCommission = acSide === 'buyer' ? buyerCommission : sellerCommission;
 
-        // Display result
-        document.getElementById('result').innerHTML = `
-            <p>Total Commission: $${commission.toFixed(2)}</p>
-            <p>Buyer Agent Commission: $${buyerCommission.toFixed(2)}</p>
-            <p>Seller Agent Commission: $${sellerCommission.toFixed(2)}</p>
-        `;
+        var yourGross = sideCommission * (splitPct / 100);
+        var brokerageAmount = sideCommission - yourGross;
+        var netPayout = yourGross - dealFee;
+
+        document.getElementById('ac_totalComm').textContent = formatMoney(commission);
+        document.getElementById('ac_buyerComm').textContent = formatMoney(buyerCommission);
+        document.getElementById('ac_sellerComm').textContent = formatMoney(sellerCommission);
+
+        document.getElementById('ac_netLabel').textContent = 'Your Net Payout (' + (acSide === 'buyer' ? 'Buyer Side' : 'Seller Side') + ')';
+        document.getElementById('ac_sideCommLabel').textContent = (acSide === 'buyer' ? 'Buyer' : 'Seller') + ' Agent Commission';
+        document.getElementById('ac_sideComm').textContent = formatMoney(sideCommission);
+        document.getElementById('ac_splitLabel').textContent = 'Brokerage Split (' + (100 - splitPct).toFixed(0) + '%)';
+        document.getElementById('ac_splitAmount').textContent = '-' + formatMoney(brokerageAmount);
+        document.getElementById('ac_feeAmount').textContent = '-' + formatMoney(dealFee);
+        document.getElementById('ac_netPayout').textContent = formatMoney(netPayout);
+
+        document.getElementById('ac_result').classList.add('visible');
+    }
+
+    // ---------- CALCULATOR 2: SELLER NET PROCEEDS ----------
+    function calcSellerNet(){
+        var salePrice = parseFloat(document.getElementById('sp_salePrice').value);
+        var mortgageBalance = parseFloat(document.getElementById('sp_mortgageBalance').value) || 0;
+        var firstRate = parseFloat(document.getElementById('sp_firstRate').value) / 100;
+        var secondRate = parseFloat(document.getElementById('sp_secondRate').value) / 100;
+        var legalFees = parseFloat(document.getElementById('sp_legalFees').value) || 0;
+        var gstRate = parseFloat(document.getElementById('sp_gstRate').value) / 100;
+
+        if(isNaN(salePrice) || salePrice <= 0){
+            alert('Please enter a valid sale price.');
+            return;
+        }
+        if(isNaN(firstRate) || isNaN(secondRate)){
+            alert('Please enter valid commission rates.');
+            return;
+        }
+
+        var firstPortion = 100000;
+        var commission;
+        if(salePrice > firstPortion){
+            commission = (firstPortion * firstRate) + ((salePrice - firstPortion) * secondRate);
+        } else {
+            commission = salePrice * firstRate;
+        }
+
+        var gst = isNaN(gstRate) ? 0 : commission * gstRate;
+
+        var marketing = 0;
+        if(document.getElementById('sp_chkPhotos').checked){
+            marketing += parseFloat(document.getElementById('sp_costPhotos').value) || 0;
+        }
+        if(document.getElementById('sp_chkVideo').checked){
+            marketing += parseFloat(document.getElementById('sp_costVideo').value) || 0;
+        }
+        if(document.getElementById('sp_chkFloorplan').checked){
+            marketing += parseFloat(document.getElementById('sp_costFloorplan').value) || 0;
+        }
+        if(document.getElementById('sp_chkMls').checked){
+            marketing += parseFloat(document.getElementById('sp_costMls').value) || 0;
+        }
+        if(document.getElementById('sp_chkDigital').checked){
+            marketing += parseFloat(document.getElementById('sp_costDigital').value) || 0;
+        }
+
+        var netProceeds = salePrice - mortgageBalance - commission - gst - marketing - legalFees;
+
+        document.getElementById('sp_outSalePrice').textContent = formatMoney(salePrice);
+        document.getElementById('sp_outMortgage').textContent = '-' + formatMoney(mortgageBalance);
+        document.getElementById('sp_outCommission').textContent = '-' + formatMoney(commission);
+        document.getElementById('sp_outGst').textContent = '-' + formatMoney(gst);
+        document.getElementById('sp_outMarketing').textContent = '-' + formatMoney(marketing);
+        document.getElementById('sp_outLegal').textContent = '-' + formatMoney(legalFees);
+        document.getElementById('sp_outNet').textContent = formatMoney(netProceeds);
+
+        document.getElementById('sp_result').classList.add('visible');
     }
 </script>
-
 </body>
 </html>
