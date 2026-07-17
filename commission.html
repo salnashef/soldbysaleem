@@ -227,6 +227,23 @@
         <label for="ac_salePrice">Sale Price ($)</label>
         <input type="number" id="ac_salePrice" placeholder="e.g. 769000">
 
+        <label>Your Side</label>
+        <div class="side-toggle">
+            <button type="button" id="ac_btnBuyer" class="active" onclick="acSetSide('buyer')">Buyer Agent</button>
+            <button type="button" id="ac_btnSeller" onclick="acSetSide('seller')">Seller Agent</button>
+        </div>
+
+        <div class="row">
+            <div>
+                <label for="ac_rate1">Rate on First $100k (%)</label>
+                <input type="number" id="ac_rate1" value="3.22">
+            </div>
+            <div>
+                <label for="ac_rate2">Rate on Remainder (%)</label>
+                <input type="number" id="ac_rate2" value="1.15">
+            </div>
+        </div>
+
         <div class="row">
             <div>
                 <label for="ac_splitPct">Your Split (%)</label>
@@ -238,25 +255,12 @@
             </div>
         </div>
 
-        <label>Your Side</label>
-        <div class="side-toggle">
-            <button type="button" id="ac_btnBuyer" class="active" onclick="acSetSide('buyer')">Buyer Agent</button>
-            <button type="button" id="ac_btnSeller" onclick="acSetSide('seller')">Seller Agent</button>
-        </div>
-
         <button onclick="calcAgentCommission()">Calculate</button>
 
         <div class="result" id="ac_result">
             <div class="block">
-                <div class="block-label">Gross Commission</div>
-                <div class="line"><span>Total Commission (both sides)</span><span id="ac_totalComm"></span></div>
-                <div class="line"><span>Buyer Agent Commission</span><span id="ac_buyerComm"></span></div>
-                <div class="line"><span>Seller Agent Commission</span><span id="ac_sellerComm"></span></div>
-            </div>
-
-            <div class="block">
                 <div class="block-label" id="ac_netLabel">Your Net Payout</div>
-                <div class="line"><span id="ac_sideCommLabel">Your Side Commission</span><span id="ac_sideComm"></span></div>
+                <div class="line"><span id="ac_sideCommLabel">Gross Commission (Buyer Side)</span><span id="ac_sideComm"></span></div>
                 <div class="line deduction"><span id="ac_splitLabel">Brokerage Split (15%)</span><span id="ac_splitAmount"></span></div>
                 <div class="line deduction"><span>Deal Fee</span><span id="ac_feeAmount"></span></div>
                 <div class="line net"><span>You Take Home</span><span id="ac_netPayout"></span></div>
@@ -368,6 +372,13 @@
         acSide = side;
         document.getElementById('ac_btnBuyer').classList.toggle('active', side === 'buyer');
         document.getElementById('ac_btnSeller').classList.toggle('active', side === 'seller');
+        if(side === 'buyer'){
+            document.getElementById('ac_rate1').value = 3.22;
+            document.getElementById('ac_rate2').value = 1.15;
+        } else {
+            document.getElementById('ac_rate1').value = 3.78;
+            document.getElementById('ac_rate2').value = 1.35;
+        }
         if(document.getElementById('ac_result').classList.contains('visible')){
             calcAgentCommission();
         }
@@ -375,11 +386,17 @@
 
     function calcAgentCommission(){
         var salePrice = parseFloat(document.getElementById('ac_salePrice').value);
+        var rate1 = parseFloat(document.getElementById('ac_rate1').value) / 100;
+        var rate2 = parseFloat(document.getElementById('ac_rate2').value) / 100;
         var splitPct = parseFloat(document.getElementById('ac_splitPct').value);
         var dealFee = parseFloat(document.getElementById('ac_dealFee').value);
 
         if(isNaN(salePrice) || salePrice <= 0){
             alert('Please enter a valid sale price.');
+            return;
+        }
+        if(isNaN(rate1) || isNaN(rate2)){
+            alert('Please enter valid commission rates.');
             return;
         }
         if(isNaN(splitPct) || splitPct < 0 || splitPct > 100){
@@ -390,31 +407,21 @@
             dealFee = 0;
         }
 
-        var firstRate = 0.07;
-        var secondRate = 0.025;
         var firstPortion = 100000;
-        var commission;
+        var sideCommission;
 
         if(salePrice > firstPortion){
-            commission = (firstPortion * firstRate) + ((salePrice - firstPortion) * secondRate);
+            sideCommission = (firstPortion * rate1) + ((salePrice - firstPortion) * rate2);
         } else {
-            commission = salePrice * firstRate;
+            sideCommission = salePrice * rate1;
         }
-
-        var buyerCommission = commission / 2;
-        var sellerCommission = commission / 2;
-        var sideCommission = acSide === 'buyer' ? buyerCommission : sellerCommission;
 
         var yourGross = sideCommission * (splitPct / 100);
         var brokerageAmount = sideCommission - yourGross;
         var netPayout = yourGross - dealFee;
 
-        document.getElementById('ac_totalComm').textContent = formatMoney(commission);
-        document.getElementById('ac_buyerComm').textContent = formatMoney(buyerCommission);
-        document.getElementById('ac_sellerComm').textContent = formatMoney(sellerCommission);
-
         document.getElementById('ac_netLabel').textContent = 'Your Net Payout (' + (acSide === 'buyer' ? 'Buyer Side' : 'Seller Side') + ')';
-        document.getElementById('ac_sideCommLabel').textContent = (acSide === 'buyer' ? 'Buyer' : 'Seller') + ' Agent Commission';
+        document.getElementById('ac_sideCommLabel').textContent = 'Gross Commission (' + (acSide === 'buyer' ? 'Buyer' : 'Seller') + ' Side)';
         document.getElementById('ac_sideComm').textContent = formatMoney(sideCommission);
         document.getElementById('ac_splitLabel').textContent = 'Brokerage Split (' + (100 - splitPct).toFixed(0) + '%)';
         document.getElementById('ac_splitAmount').textContent = '-' + formatMoney(brokerageAmount);
