@@ -101,6 +101,9 @@
     <label>Discount (% on tuition)</label>
     <input type="number" id="discount" min="0" max="100" value="0">
   </div>
+  <div id="onshore-note" style="display:none; align-self:end; margin-bottom:10px;">
+    <span class="field-hint">Onshore: discount is calculated automatically as the difference between the regular tuition rate and the onshore rate.</span>
+  </div>
 </div>
 
 <div>
@@ -167,6 +170,17 @@ const priceSchedulesOffshore = {
     "Super Intensive 36":{ 1:558, 4:507, 8:502, 12:487, 24:467, 36:459 }
   }
 };
+
+/* Maps an onshore program to the regular (published) price schedule used as the
+   "before discount" reference. USA onshore courses are 18/20 lessons, so they map
+   to the Morning 20 schedule. */
+const ONSHORE_REGULAR_EQUIVALENT = {
+  "Morning 18/20 General":    "Morning 20",
+  "Afternoon 18/20 Academic": "Morning 20"
+};
+
+const onshoreRatesCanada = { "Morning 20":200, "Semi Intensive 26":250, "Intensive 30":275, "Super Intensive 40":300 };
+
 const registrationFees      = { Canada:185, USA:200 };
 const insuranceRates        = { Canada:3.1, USA:4.3 };
 const homestayPlacementFees = { Canada:280, USA:200 };
@@ -203,10 +217,17 @@ let lastMode       = 'single';
 let lastCompResults = [];
 let lastCalcData   = null;
 
+/* ── formatting helper ── */
+function fmtPct(p) {
+  return (Math.round(p * 10) / 10).toString();
+}
+
 /* ── dropdown helpers ── */
 function handleCategoryChange() {
   const cat = document.getElementById("student-category").value;
-  document.getElementById("discount-container").style.display = cat === "onshore" ? "none" : "block";
+  const isOnshore = cat === "onshore";
+  document.getElementById("discount-container").style.display = isOnshore ? "none" : "block";
+  document.getElementById("onshore-note").style.display       = isOnshore ? "block" : "none";
   updateProgramTypeDropdown();
 }
 
@@ -252,6 +273,20 @@ function updateHomestayAndTransfer() {
   }
 }
 
+/* ── rate lookups ── */
+function regularWeeklyRate(country, prog, duration) {
+  const key = ONSHORE_REGULAR_EQUIVALENT[prog] || prog;
+  const sch = priceSchedulesOffshore[country] && priceSchedulesOffshore[country][key];
+  let r = 0;
+  if (sch) { for (let w in sch) { if (duration >= parseInt(w)) r = sch[w]; } }
+  return r;
+}
+
+function onshoreWeeklyRate(country, prog, duration) {
+  if (country === "Canada") return onshoreRatesCanada[prog] || 0;
+  return prog.indexOf("Morning") > -1 ? (duration >= 4 ? 170 : 190) : (duration >= 4 ? 140 : 160);
+}
+
 /* ── core calculation ── */
 function calculateGeneric(prog) {
   const cat         = document.getElementById("student-category").value;
@@ -262,26 +297,36 @@ function calculateGeneric(prog) {
   const homestayType  = document.getElementById("homestay-type").value;
   const homestayWeeks = parseInt(document.getElementById("homestay-duration").value) || 0;
   const transferType  = document.getElementById("transfer-type").value;
-  const discount      = parseInt(document.getElementById("discount").value) || 0;
+  const discountInput = parseFloat(document.getElementById("discount").value) || 0;
   const optOutIns     = document.getElementById("opt-out-insurance").checked;
   const studentType   = document.getElementById("student-type").value;
 
-  let rate = 0;
+  /* Regular (published) rate is always the "before discount" reference.
+     Onshore students pay the onshore rate; the gap is shown as the discount. */
+  let regularRate = regularWeeklyRate(country, prog, duration);
+  let chargedRate = regularRate;
+
   if (cat === "onshore") {
-    if (country === "Canada") {
-      const rs = {"Morning 20":200,"Semi Intensive 26":250,"Intensive 30":275,"Super Intensive 40":300};
-      rate = rs[prog] || 0;
-    } else {
-      rate = prog.includes("Morning") ? (duration >= 4 ? 170 : 190) : (duration >= 4 ? 140 : 160);
-    }
-  } else {
-    const sch = priceSchedulesOffshore[country] && priceSchedulesOffshore[country][prog];
-    if (sch) { for (let w in sch) { if (duration >= parseInt(w)) rate = sch[w]; } }
+    chargedRate = onshoreWeeklyRate(country, prog, duration);
+    if (!regularRate || regularRate < chargedRate) regularRate = chargedRate;
   }
 
-  const tuitionBeforeDiscount = rate * duration;
-  const discountAmount        = tuitionBeforeDiscount * (discount / 100);
-  const tuitionFinal          = tuitionBeforeDiscount - discountAmount;
+  const rate = regularRate;
+  const tuitionBeforeDiscount = regularRate * duration;
+
+  let discountAmount, discountPct, discountLabel;
+  if (cat === "onshore") {
+    discountAmount = (regularRate - chargedRate) * duration;
+    discountPct    = tuitionBeforeDiscount > 0 ? (discountAmount / tuitionBeforeDiscount) * 100 : 0;
+    discountLabel  = "Onshore rate discount";
+  } else {
+    discountPct    = discountInput;
+    discountAmount = tuitionBeforeDiscount * (discountPct / 100);
+    discountLabel  = "Tuition discount";
+  }
+
+  const tuitionFinal = tuitionBeforeDiscount - discountAmount;
+  const netRate      = duration > 0 ? tuitionFinal / duration : 0;
 
   let hWeekly = homestayType !== "No Accommodation" ? homestayPrices[country][campus][homestayType] : 0;
   let hBase   = hWeekly * homestayWeeks;
@@ -305,7 +350,8 @@ function calculateGeneric(prog) {
   const supplementFee = (country === "Canada" && studentType === "Minor") ? MINOR_SUPPLEMENT_WEEKLY_RATE * duration : 0;
 
   return {
-    rate, tuitionBeforeDiscount, discountAmount, discount, tuitionFinal,
+    rate, chargedRate, netRate,
+    tuitionBeforeDiscount, discountAmount, discount: discountPct, discountLabel, tuitionFinal,
     regFee, matTotal, matDiscountApplied, hBase, hWeekly, pFee, hsWeeks, hsTotal: hsWeeks * 42,
     insFee, transferFee, studentType, supplementFee,
     total: tuitionFinal + hBase + pFee + hsWeeks * 42 + regFee + transferFee + matTotal + insFee + supplementFee,
@@ -327,9 +373,11 @@ function calculateQuote() {
   lastMode     = 'single';
   lastCalcData = d;
 
-  const discountLine = d.discount > 0
-    ? `Tuition discount (${d.discount}%): <span class="discount-line">-$${d.discountAmount.toFixed(2)}</span>
-       <span class="unit-rate">(${d.discount}% off $${d.tuitionBeforeDiscount.toFixed(2)})</span><br>` : '';
+  const isOnshore = d.cat === "onshore";
+
+  const discountLine = d.discountAmount > 0
+    ? `${d.discountLabel} (${fmtPct(d.discount)}%): <span class="discount-line">-$${d.discountAmount.toFixed(2)}</span>
+       <span class="unit-rate">(${fmtPct(d.discount)}% off $${d.tuitionBeforeDiscount.toFixed(2)})</span><br>` : '';
 
   const supplementLine = d.supplementFee > 0
     ? `Minor supplement fee: $${d.supplementFee.toFixed(2)} <span class="unit-rate">($${MINOR_SUPPLEMENT_WEEKLY_RATE}/wk × ${duration} wks)</span><br>` : '';
@@ -342,9 +390,9 @@ function calculateQuote() {
       Transfer: ${d.transferType} | Insurance: ${d.optOutIns ? 'Opted out' : 'Included'}<br>
       Student type: ${d.studentType}${d.supplementFee > 0 ? ' (minor supplement applies)' : ''}
     </div>
-    Tuition (before discount): $${d.tuitionBeforeDiscount.toFixed(2)} <span class="unit-rate">($${d.rate}/wk × ${duration} wks)</span><br>
+    Tuition (regular rate): $${d.tuitionBeforeDiscount.toFixed(2)} <span class="unit-rate">($${d.rate}/wk × ${duration} wks)</span><br>
     ${discountLine}
-    Tuition (after discount): $${d.tuitionFinal.toFixed(2)}<br>
+    Tuition (after discount): $${d.tuitionFinal.toFixed(2)} <span class="unit-rate">($${d.netRate.toFixed(2)}/wk${isOnshore ? ' onshore rate' : ''})</span><br>
     Registration: $${d.regFee.toFixed(2)} <span class="unit-rate">(Flat)</span><br>
     Materials: $${d.matTotal.toFixed(2)} <span class="unit-rate">($${(d.matTotal/duration).toFixed(2)}/wk)${d.matDiscountApplied ? ' – 50% short-duration discount (\u22648 wks)' : ''}</span><br>
     Homestay: $${d.hBase.toFixed(2)} <span class="unit-rate">($${d.hWeekly}/wk × ${document.getElementById("homestay-duration").value} wks)</span><br>
@@ -363,7 +411,13 @@ function calculateQuote() {
 
 /* ── comparison ── */
 function calculateComparison() {
-  const programs = ["Morning 20","Semi Intensive 26","Intensive 30"];
+  const country = document.getElementById("country").value;
+  const cat     = document.getElementById("student-category").value;
+  const programs = country === "Canada"
+    ? ["Morning 20","Semi Intensive 26","Intensive 30"]
+    : cat === "onshore"
+      ? ["Morning 18/20 General","Afternoon 18/20 Academic"]
+      : ["Morning 20","Semi Intensive 23","Intensive 27"];
   const results  = programs.map(p => ({ name: p, data: calculateGeneric(p) }));
   lastCompResults = results;
   lastMode     = 'comparison';
@@ -375,7 +429,7 @@ function calculateComparison() {
   html += `</tr>`;
 
   const rows = [
-    { label:"Tuition (before discount)", key:"tuitionBeforeDiscount" },
+    { label:"Tuition (regular rate)",    key:"tuitionBeforeDiscount" },
     { label:"Discount",                  key:"discountAmount", negative:true },
     { label:"Tuition (after discount)",  key:"tuitionFinal" },
     { label:"Registration",              key:"regFee" },
@@ -499,6 +553,7 @@ function downloadPDF() {
     /* ── single quote PDF ── */
     if (lastMode === 'single' && lastCalcData) {
       const d = lastCalcData;
+      const isOnshore = d.cat === "onshore";
 
       doc.setFillColor(0,119,204);
       doc.rect(0, 0, pageW, 14, "F");
@@ -539,10 +594,10 @@ function downloadPDF() {
       hline(y); y += 5;
 
       doc.setFontSize(9);
-      const fees = [{ label:"Tuition (before discount)", value:"$"+d.tuitionBeforeDiscount.toFixed(2), note:"$"+d.rate+"/wk \xD7 "+duration+" wks" }];
-      if (d.discount > 0) {
-        fees.push({ label:"Tuition discount ("+d.discount+"%)", value:"-$"+d.discountAmount.toFixed(2), note:d.discount+"% off" });
-        fees.push({ label:"Tuition (after discount)", value:"$"+d.tuitionFinal.toFixed(2), note:"" });
+      const fees = [{ label:"Tuition (regular rate)", value:"$"+d.tuitionBeforeDiscount.toFixed(2), note:"$"+d.rate+"/wk \xD7 "+duration+" wks" }];
+      if (d.discountAmount > 0) {
+        fees.push({ label:d.discountLabel+" ("+fmtPct(d.discount)+"%)", value:"-$"+d.discountAmount.toFixed(2), note:fmtPct(d.discount)+"% off regular tuition" });
+        fees.push({ label:"Tuition (after discount)", value:"$"+d.tuitionFinal.toFixed(2), note:"$"+d.netRate.toFixed(2)+"/wk"+(isOnshore ? " onshore rate" : "") });
       }
       fees.push(
         { label:"Registration",          value:"$"+d.regFee.toFixed(2),    note:"Flat" },
@@ -613,17 +668,17 @@ function downloadPDF() {
       y += 5;
 
       const rows = [
-        {label:"Tuition (before disc.)", key:"tuitionBeforeDiscount"},
-        {label:"Discount",               key:"discountAmount", negative:true},
-        {label:"Tuition (after disc.)",  key:"tuitionFinal"},
-        {label:"Registration",           key:"regFee"},
-        {label:"Materials",              key:"matTotal"},
-        {label:"Homestay",               key:"hBase"},
-        {label:"Placement",              key:"pFee"},
-        {label:"High season",            key:"hsTotal"},
-        {label:"Insurance",              key:"insFee"},
-        {label:"Transfer",               key:"transferFee"},
-        {label:"Minor supplement",       key:"supplementFee"}
+        {label:"Tuition (regular rate)",  key:"tuitionBeforeDiscount"},
+        {label:"Discount",                key:"discountAmount", negative:true},
+        {label:"Tuition (after disc.)",   key:"tuitionFinal"},
+        {label:"Registration",            key:"regFee"},
+        {label:"Materials",               key:"matTotal"},
+        {label:"Homestay",                key:"hBase"},
+        {label:"Placement",               key:"pFee"},
+        {label:"High season",             key:"hsTotal"},
+        {label:"Insurance",               key:"insFee"},
+        {label:"Transfer",                key:"transferFee"},
+        {label:"Minor supplement",        key:"supplementFee"}
       ];
       rows.forEach(function(row, idx) {
         checkPage(8);
@@ -659,7 +714,7 @@ function downloadPDF() {
     const prog  = document.getElementById("program-type").value;
     const fname = isComparisonPDF
       ? "ESL_Quote_Comparison_"+(campus||"Quote")+"_"+new Date().toISOString().slice(0,10)+".pdf"
-      : "ESL_Quote_"+(campus||"Quote")+"_"+prog.replace(/\s/g,"_")+"_"+new Date().toISOString().slice(0,10)+".pdf";
+      : "ESL_Quote_"+(campus||"Quote")+"_"+prog.replace(/[\s\/]/g,"_")+"_"+new Date().toISOString().slice(0,10)+".pdf";
     doc.save(fname);
 
   } catch(e) {
@@ -695,6 +750,7 @@ function buildSingleQuoteText() {
   const country  = document.getElementById("country").value;
   const hsDur    = document.getElementById("homestay-duration").value;
   const d        = calculateGeneric(prog);
+  const isOnshore = d.cat === "onshore";
   const W = 46;
   const bar = "=".repeat(W);
   const rule = "-".repeat(W);
@@ -703,16 +759,18 @@ function buildSingleQuoteText() {
     bar,
     centerText("ESL QUOTE BREAKDOWN", W),
     bar,
+    "Category       : " + d.cat.toUpperCase(),
     "Program        : " + prog,
     "Campus         : " + campus + ", " + country,
     "Duration       : " + duration + " weeks",
     "Student type   : " + d.studentType,
     "Insurance      : " + (d.optOutIns ? "Opted out" : "Included"),
     rule,
-    copyRow("Tuition (before discount)", "$" + d.tuitionBeforeDiscount.toFixed(2), W),
+    copyRow("Tuition (regular rate)", "$" + d.tuitionBeforeDiscount.toFixed(2), W),
     "   $" + d.rate.toFixed(2) + "/wk x " + duration + " wks",
-    d.discount > 0 ? copyRow("Discount (" + d.discount + "%)", "-$" + d.discountAmount.toFixed(2), W) : null,
-    d.discount > 0 ? copyRow("Tuition (after discount)", "$" + d.tuitionFinal.toFixed(2), W) : null,
+    d.discountAmount > 0 ? copyRow(d.discountLabel + " (" + fmtPct(d.discount) + "%)", "-$" + d.discountAmount.toFixed(2), W) : null,
+    d.discountAmount > 0 ? copyRow("Tuition (after discount)", "$" + d.tuitionFinal.toFixed(2), W) : null,
+    d.discountAmount > 0 ? "   $" + d.netRate.toFixed(2) + "/wk" + (isOnshore ? " onshore rate" : "") : null,
     copyRow("Registration", "$" + d.regFee.toFixed(2), W),
     copyRow("Materials", "$" + d.matTotal.toFixed(2), W),
     d.matDiscountApplied ? "   50% short-duration discount (\u22648 wks)" : null,
@@ -760,7 +818,7 @@ function buildComparisonText() {
   ];
 
   const rows = [
-    { label: "Tuition (before disc.)", key: "tuitionBeforeDiscount" },
+    { label: "Tuition (regular)",      key: "tuitionBeforeDiscount" },
     { label: "Discount",               key: "discountAmount", negative: true },
     { label: "Tuition (after disc.)",  key: "tuitionFinal" },
     { label: "Registration",           key: "regFee" },
@@ -793,6 +851,7 @@ function buildSingleQuoteHTML() {
   const country  = document.getElementById("country").value;
   const hsDur    = document.getElementById("homestay-duration").value;
   const d        = calculateGeneric(prog);
+  const isOnshore = d.cat === "onshore";
 
   const wrap        = 'style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#333333;border-collapse:collapse;width:100%;max-width:500px;border:1px solid #dddddd;"';
   const titleCell    = 'style="background-color:#0077cc;color:#ffffff;padding:12px 14px;font-size:16px;font-weight:bold;text-align:center;"';
@@ -820,6 +879,7 @@ function buildSingleQuoteHTML() {
   }
 
   rows += '<tr><td colspan="2" ' + titleCell + '>ESL Quote Breakdown</td></tr>';
+  detail("Category", d.cat.toUpperCase());
   detail("Program", prog);
   detail("Campus", campus + ", " + country);
   detail("Duration", duration + " weeks");
@@ -828,11 +888,12 @@ function buildSingleQuoteHTML() {
 
   rows += '<tr><td colspan="2" ' + sectionHead + '>FEE BREAKDOWN</td></tr>';
 
-  fee("Tuition (before discount)", "$" + d.tuitionBeforeDiscount.toFixed(2));
+  fee("Tuition (regular rate)", "$" + d.tuitionBeforeDiscount.toFixed(2));
   note("$" + d.rate.toFixed(2) + "/wk &times; " + duration + " wks");
-  if (d.discount > 0) {
-    fee("Discount (" + d.discount + "%)", "-$" + d.discountAmount.toFixed(2));
+  if (d.discountAmount > 0) {
+    fee(d.discountLabel + " (" + fmtPct(d.discount) + "%)", "-$" + d.discountAmount.toFixed(2));
     fee("Tuition (after discount)", "$" + d.tuitionFinal.toFixed(2));
+    note("$" + d.netRate.toFixed(2) + "/wk" + (isOnshore ? " onshore rate" : ""));
   }
   fee("Registration", "$" + d.regFee.toFixed(2));
   fee("Materials", "$" + d.matTotal.toFixed(2));
@@ -876,17 +937,17 @@ function buildComparisonHTML() {
   head += '</tr>';
 
   const rows = [
-    { label: "Tuition (before disc.)", key: "tuitionBeforeDiscount" },
-    { label: "Discount",               key: "discountAmount", negative: true },
-    { label: "Tuition (after disc.)",  key: "tuitionFinal" },
-    { label: "Registration",           key: "regFee" },
-    { label: "Materials",              key: "matTotal" },
-    { label: "Homestay",               key: "hBase" },
-    { label: "Placement",              key: "pFee" },
-    { label: "High season",            key: "hsTotal" },
-    { label: "Insurance",              key: "insFee" },
-    { label: "Transfer",               key: "transferFee" },
-    { label: "Minor supplement",       key: "supplementFee" }
+    { label: "Tuition (regular rate)",  key: "tuitionBeforeDiscount" },
+    { label: "Discount",                key: "discountAmount", negative: true },
+    { label: "Tuition (after disc.)",   key: "tuitionFinal" },
+    { label: "Registration",            key: "regFee" },
+    { label: "Materials",               key: "matTotal" },
+    { label: "Homestay",                key: "hBase" },
+    { label: "Placement",               key: "pFee" },
+    { label: "High season",             key: "hsTotal" },
+    { label: "Insurance",               key: "insFee" },
+    { label: "Transfer",                key: "transferFee" },
+    { label: "Minor supplement",        key: "supplementFee" }
   ];
 
   let bodyRows = "";
