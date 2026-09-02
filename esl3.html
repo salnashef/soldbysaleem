@@ -2673,12 +2673,12 @@ function showTemplateEmail() {
   content.innerHTML = `
     <h2 style="color:#0077cc; margin-top:0;">Template Email - ${campus}, ${country}</h2>
     
-    <div style="background:#f0f8ff; padding:15px; border-radius:5px; margin:20px 0; max-height:800px; overflow-y:auto; font-size:12px; line-height:1.6;">
-      <p><strong>Subject: Your Personalized English Programme Quotation</strong></p>
+    <div id="email-body" style="background:#f0f8ff; padding:15px; border-radius:5px; margin:20px 0; max-height:800px; overflow-y:auto; font-size:12px; line-height:1.6;">
+      <p style="font-weight:normal;">Subject: Your Personalized English Programme Quotation</p>
       
-      <p>Dear Student,</p>
+      <p style="font-weight:normal;">Dear Student,</p>
       
-      <p>Thank you for your interest in Oxford International English Schools ${campus}. We're excited to welcome you to our community of learners from around the world. With over 34 years of language education excellence, we've perfected our approach to help you achieve your English goals faster and more effectively.</p>
+      <p style="font-weight:normal;">Thank you for your interest in Oxford International English Schools ${campus}. We're excited to welcome you to our community of learners from around the world. With over 34 years of language education excellence, we've perfected our approach to help you achieve your English goals faster and more effectively.</p>
       
       <h3 style="margin:15px 0 10px 0; color:#333;">Why Choose Oxford International?</h3>
       
@@ -2931,7 +2931,9 @@ Oxford International English Schools - ${campus}`;
    Writes text/html (rich) and text/plain (fallback) to the clipboard together,
    so email clients paste the formatted version and plain-text clients still work. */
 function copyRichEmail(plainText) {
-  const source = document.getElementById("modal-content");
+  /* Copy only the email body - the modal's own "Template Email - Campus" heading
+     is interface furniture and should not end up in the message. */
+  const source = document.getElementById("email-body") || document.getElementById("modal-content");
   if (!source) { return legacyCopy(plainText); }
 
   /* Wrap in a self-contained document with the base font so the styling
