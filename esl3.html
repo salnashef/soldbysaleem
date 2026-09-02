@@ -2453,54 +2453,71 @@ function popularProgrammeName(country) {
 /* The on-screen schedule uses gold text on the dark navy cells, which reads
    poorly once pasted into an email client. Swap it for white for the email
    copy only, leaving the calculator's own display untouched. */
+/* Preparing the schedule for pasting into an email.
+
+   White-on-navy cannot be made reliable here. Mail clients apply their own
+   stylesheet to table cells, and Gmail discards any declaration carrying
+   !important outright - so the white text disappears and the client's default
+   text is left sitting on a dark fill, which is unreadable.
+
+   So instead of fighting for white text, the email copy inverts the dark cells:
+   a light tint of the same brand colour with dark bold text. If a client strips
+   every colour we send, the worst case is default dark text on a light fill,
+   which still reads perfectly. The calculator's own on-screen schedule keeps
+   the original navy-and-gold styling - only the email copy is changed. */
+const EMAIL_CELL_RECOLOUR = {
+  "#2c1a70": { bg:"#e7e4f3", fg:"#2c1a70" },  /* AM Core - navy       */
+  "#ff6b6b": { bg:"#ffe5e5", fg:"#b02a2a" },  /* Social Programme     */
+  "#534ab7": { bg:"#e9e7f7", fg:"#3d3590" },  /* comparison header    */
+  "#0077cc": { bg:"#e4f1fb", fg:"#005fa3" }   /* totals / accents     */
+};
+
 function scheduleHTMLForEmail() {
   const el = document.getElementById("schedule-content");
   if (!el || !el.innerHTML) return "";
   let html = el.innerHTML;
 
-  /* Gold-on-navy reads poorly once pasted, so use white text instead. */
-  html = html.replace(/color:\s*#FFB84D/gi, "color:#ffffff");
-  html = html.replace(/color:\s*rgb\(\s*255\s*,\s*184\s*,\s*77\s*\)/gi, "color:#ffffff");
+  /* the gold used on navy has no meaning once the fill is light */
+  html = html.replace(/color:\s*#FFB84D/gi, "color:inherit");
+  html = html.replace(/color:\s*rgb\(\s*255\s*,\s*184\s*,\s*77\s*\)/gi, "color:inherit");
 
-  /* Mail clients apply their own stylesheet to table cells, which outranks a
-     plain inline colour and leaves dark cells showing the client's default
-     dark text on a dark fill. Four defences, since any one can be stripped:
-     !important on the cell, a legacy bgcolor attribute for the fill, and both
-     a <span> and a <font> carrying white on the text itself. */
-  const DARK_FILLS = ["#2c1a70", "#ff6b6b", "#534ab7", "#0077cc"];
-  const WHITE = "#ffffff";
-
-  html = html.replace(/<(td|th)([^>]*)>([\s\S]*?)<\/\1>/gi, function(match, tag, attrs, inner) {
+  function recolour(tagMatch, tag, attrs, inner) {
     const bgMatch = attrs.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,6})/i);
-    if (!bgMatch) return match;
+    if (!bgMatch) return tagMatch;
     const bg = bgMatch[1].toLowerCase();
+    const map = EMAIL_CELL_RECOLOUR[bg];
 
     let newAttrs = attrs;
-    if (!/bgcolor\s*=/i.test(newAttrs)) newAttrs += ' bgcolor="' + bg + '"';
-
-    if (DARK_FILLS.indexOf(bg) !== -1) {
-      /* strip any existing text colour, ignoring background-color */
-      newAttrs = newAttrs.replace(/(^|[;\s"'])color\s*:\s*[^;"']+;?/gi, function(m2, lead) {
-        return lead;
-      });
+    if (map) {
+      /* repaint the fill and drop any colour that was set for the dark version */
+      newAttrs = newAttrs.replace(/background(?:-color)?:\s*#[0-9a-fA-F]{3,6}/i, "background-color:" + map.bg);
+      newAttrs = newAttrs.replace(/(^|[;\s"'])color\s*:\s*[^;"']+;?/gi, function(m, lead) { return lead; });
       newAttrs = /style\s*=\s*"/i.test(newAttrs)
-        ? newAttrs.replace(/style\s*=\s*"/i, 'style="color:' + WHITE + ' !important; ')
-        : newAttrs + ' style="color:' + WHITE + ' !important;"';
-
+        ? newAttrs.replace(/style\s*=\s*"/i, 'style="color:' + map.fg + '; font-weight:bold; ')
+        : newAttrs + ' style="color:' + map.fg + '; font-weight:bold;"';
+      newAttrs = newAttrs.replace(/bgcolor\s*=\s*"[^"]*"/i, "");
+      newAttrs += ' bgcolor="' + map.bg + '"';
       if (inner.replace(/<[^>]*>/g, "").trim()) {
-        inner = '<span style="color:' + WHITE + ' !important;"><font color="' + WHITE + '">' +
-                inner + '</font></span>';
+        inner = '<font color="' + map.fg + '">' + inner + '</font>';
       }
+    } else if (!/bgcolor\s*=/i.test(newAttrs)) {
+      newAttrs += ' bgcolor="' + bg + '"';
     }
     return "<" + tag + newAttrs + ">" + inner + "</" + tag + ">";
-  });
+  }
 
-  /* Row-level colours survive in clients that drop cell-level ones, so make
-     the header row's white text explicit there too. */
-  html = html.replace(/<tr([^>]*background(?:-color)?:\s*#2c1a70[^>]*)>/gi, function(m, attrs) {
-    if (/bgcolor\s*=/i.test(attrs)) return "<tr" + attrs + ">";
-    return '<tr' + attrs.replace(/color\s*:\s*white/i, "color:" + WHITE + " !important") +
-           ' bgcolor="#2c1a70">';
+  html = html.replace(/<(td|th)([^>]*)>([\s\S]*?)<\/\1>/gi, recolour);
+
+  /* header rows carry their colour on the <tr>; repaint those too */
+  html = html.replace(/<tr([^>]*)>/gi, function(m, attrs) {
+    const bgMatch = attrs.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,6})/i);
+    if (!bgMatch) return m;
+    const map = EMAIL_CELL_RECOLOUR[bgMatch[1].toLowerCase()];
+    if (!map) return m;
+    let a = attrs.replace(/background(?:-color)?:\s*#[0-9a-fA-F]{3,6}/i, "background-color:" + map.bg);
+    a = a.replace(/color\s*:\s*white/i, "color:" + map.fg);
+    a = a.replace(/bgcolor\s*=\s*"[^"]*"/i, "");
+    return "<tr" + a + ' bgcolor="' + map.bg + '">';
   });
 
   return html;
