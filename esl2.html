@@ -8,7 +8,7 @@
     h1 { text-align: center; color: #555; margin-bottom: 4px; font-size: 19px; line-height: 1.3; }
     .subtitle { text-align: center; color: #999; font-size: 11px; margin-bottom: 18px; }
     label { display: block; margin-bottom: 6px; color: #555; font-weight: bold; font-size: 13px; }
-    input[type="date"], input[type="number"], input[type="email"], select {
+    input[type="date"], input[type="number"], input[type="email"], input[type="text"], select {
       width: 100%; padding: 9px 10px; border-radius: 5px; border: 1px solid #ccc;
       margin-bottom: 10px; background-color: #f9f9f9; color: #333; font-size: 13px;
     }
@@ -144,7 +144,7 @@
     <input type="number" id="discount" min="0" max="100" value="0">
   </div>
   <div id="onshore-note" style="display:none; align-self:end; margin-bottom:10px;">
-    <span class="field-hint">Onshore: the discount is calculated automatically as the difference between the regular published rate and the onshore rate.</span>
+    <span class="field-hint">Onshore: the rate discount is applied automatically (regular published rate minus onshore rate). Any extra discount entered above is applied on top, off the onshore tuition.</span>
   </div>
 </div>
 
@@ -230,6 +230,22 @@
     </div>
   </div>
   <div id="schedule-content" style="background:#f5f5f5; padding:15px; border-radius:5px; margin-top:10px; font-size:12px; line-height:1.8; border-left: 4px solid #0077cc;"></div>
+</div>
+
+<div style="margin-top:15px; padding:12px; background:#f0f8ff; border-radius:5px; border-left:4px solid #7F77DD;">
+  <label style="margin-bottom:8px;">Your details <span class="field-hint">(used in the template email signature)</span></label>
+  <div class="field-row">
+    <div>
+      <label>Name</label>
+      <input type="text" id="rep-name" placeholder="e.g. Saleem" value="">
+    </div>
+    <div>
+      <label>Title</label>
+      <input type="text" id="rep-title" placeholder="e.g. Divisional Sales Manager" value="">
+    </div>
+  </div>
+  <label>Email</label>
+  <input type="email" id="rep-email" placeholder="e.g. name@oxfordinternational.com" value="">
 </div>
 
 <div class="btn-grid-2" style="margin-top:15px;">
@@ -527,29 +543,53 @@ const accommodationOptions = {
       { name:"Homestay - Full Board", rate:360, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Half Board", rate:340, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Roomstay", rate:329, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
-      { name:"Residence - YWCA single, shared bath", rate:806, unit:"week" },
-      { name:"Residence - YWCA double bed, shared bath", rate:958, unit:"week" },
-      { name:"Residence - GEC Living shared room", rate:420, unit:"week" },
-      { name:"Residence - GEC Living single room", rate:600, unit:"week" }
+
+      /* YMCA Student Hotel - seasonal, residence application fee $220 */
+      { name:"YMCA single, shared hall bath (Jan 1 - Apr 30)", rate:806, unit:"week", monthlyRate:1728, applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (Jan 1 - Apr 30)", rate:958, unit:"week", monthlyRate:1908, applicationFee:220 },
+      { name:"YMCA single, shared hall bath (May)", rate:1008, unit:"week", monthlyRate:2232, applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (May)", rate:1159, unit:"week", monthlyRate:2376, applicationFee:220 },
+      { name:"YMCA single, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1159, unit:"week", applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1436, unit:"week", applicationFee:220 },
+      { name:"YMCA single, shared hall bath (Jun 12 - Jul 8, nightly)", rate:284, unit:"night", applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (Jun 12 - Jul 8, nightly)", rate:359, unit:"night", applicationFee:220 },
+      { name:"YMCA single, shared hall bath (Sep)", rate:1159, unit:"week", monthlyRate:2232, applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (Sep)", rate:1436, unit:"week", monthlyRate:2376, applicationFee:220 },
+      { name:"YMCA single, shared hall bath (Oct 1 - Dec 31)", rate:865, unit:"week", monthlyRate:1800, applicationFee:220 },
+      { name:"YMCA double bed, shared hall bath (Oct 1 - Dec 31)", rate:1025, unit:"week", monthlyRate:2016, applicationFee:220 },
+
+      /* GEC Living - min 5-week stay, amenities fee $131.25, deposit = 2 weeks rent */
+      { name:"GEC Pearson - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Pearson - single room, shared bath", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Viva - shared room, shared bath", rate:480, unit:"week", monthlyRate:1800, deposit:960, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Viva - single room, shared bath", rate:624, unit:"week", monthlyRate:2370, deposit:1248, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Burnaby - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Burnaby - single room, shared bath", rate:600, unit:"week", monthlyRate:1800, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC King Edward - shared room, shared bath", rate:480, unit:"week", monthlyRate:1830, deposit:960, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC King Edward - single room, shared bath", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Kingsway - shared room, shared bath (2-bed unit)", rate:464, unit:"week", monthlyRate:1740, deposit:928, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Kingsway - single room, shared bath (2 or 3-bed unit)", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Kingsway - single room, shared bath", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5 },
+      { name:"GEC Marine Gateway - sectioned bedroom", rate:510, unit:"week", monthlyRate:1920, deposit:1020, amenitiesFee:131.25, minWeeks:5 }
     ],
     Toronto: [
       { name:"No Accommodation", rate:0, unit:"week", none:true },
       { name:"Homestay - Full Board", rate:360, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Half Board", rate:340, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Roomstay", rate:329, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
-      { name:"Residence - HOEM single, shared bath (2-bed apt)", rate:995, unit:"week" },
-      { name:"Residence - HOEM single, shared bath (3-bed apt)", rate:810, unit:"week" },
-      { name:"Residence - HOEM single, private bath (3-bed apt)", rate:918, unit:"week" },
-      { name:"Residence - HOEM single, shared bath (4-bed apt)", rate:714, unit:"week" },
-      { name:"Residence - CCNM single, shared bath", rate:1195, unit:"month" }
+      { name:"HOEM single, shared bath (2-bed apartment)", rate:995, unit:"week", deposit:500 },
+      { name:"HOEM single, shared bath (3-bed apartment)", rate:810, unit:"week", deposit:500 },
+      { name:"HOEM single, private bath (3-bed apartment)", rate:918, unit:"week", deposit:500 },
+      { name:"HOEM single, shared bath (4-bed apartment)", rate:714, unit:"week", deposit:500 },
+      { name:"CCNM single, shared bath", rate:1195, unit:"month", applicationFee:300, deposit:2390, amenitiesFee:220, amenitiesUnit:"month" }
     ],
     Halifax: [
       { name:"No Accommodation", rate:0, unit:"week", none:true },
       { name:"Homestay - Full Board", rate:318, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Half Board", rate:300, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Roomstay", rate:287, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
-      { name:"Residence - 4Stay Brunswick single, shared bath", rate:2100, unit:"month" },
-      { name:"Residence - 4Stay Brunswick shared room", rate:1500, unit:"month" }
+      { name:"Residence - private room, shared bath", rate:1200, unit:"month", deposit:300 },
+      { name:"Residence - single bed in shared dorm, shared bath", rate:720, unit:"month", deposit:300 }
     ]
   },
   USA: {
@@ -559,10 +599,10 @@ const accommodationOptions = {
       { name:"Homestay - B&B inside Manhattan", rate:780, unit:"week", extraNight:132, hsSurcharge:42, homestay:true },
       { name:"Homestay - Half Board outside Manhattan", rate:560, unit:"week", extraNight:96, hsSurcharge:42, homestay:true },
       { name:"Homestay - Half Board inside Manhattan", rate:890, unit:"week", extraNight:151, hsSurcharge:42, homestay:true },
-      { name:"Residence - West Side YWCA single, shared hall bath", rate:945, unit:"week", extraNight:135, hsSurcharge:210 },
-      { name:"Residence - HI NYC Hostel shared room", rate:455, unit:"week", extraNight:65, hsSurcharge:210 },
-      { name:"Residence - 92NY150 single, shared hall bath", rate:2800, unit:"month", hsSurcharge:195 },
-      { name:"Residence - 92NY150 shared room (2 beds)", rate:2200, unit:"month", hsSurcharge:295 }
+      { name:"West Side YMCA single, shared hall bath", rate:945, unit:"week", extraNight:135, hsSurcharge:210, maxNights:25 },
+      { name:"HI NYC Hostel shared room, 10-12 beds (YRG groups only)", rate:455, unit:"week", extraNight:65, hsSurcharge:210, maxNights:21 },
+      { name:"92NY150 single, shared hall bath", rate:2800, unit:"month", hsSurcharge:195, applicationFee:260, deposit:700 },
+      { name:"92NY150 shared room, 2 beds, shared hall bath", rate:2200, unit:"month", hsSurcharge:295, applicationFee:260, deposit:700 }
     ]
   }
 };
@@ -607,10 +647,7 @@ function handleSchoolChange() {
 
   if (!cc) dur.value = DEFAULT_WEEKS;
 
-  const disc = document.getElementById("discount");
-  document.getElementById("discount-label").textContent = cc ? "Scholarship ($ off tuition)" : "Discount (% on tuition)";
-  if (cc) disc.removeAttribute("max"); else disc.setAttribute("max", "100");
-  disc.value = 0;
+  document.getElementById("discount").value = 0;
 
   updateDiscountVisibility();
   updateCampusDropdown();
@@ -618,9 +655,22 @@ function handleSchoolChange() {
 
 function updateDiscountVisibility() {
   const cat = document.getElementById("student-category").value;
-  const autoOnshore = cat === "onshore" && !isCareerCollege();
-  document.getElementById("discount-container").style.display = autoOnshore ? "none" : "block";
+  const cc  = isCareerCollege();
+  const autoOnshore = cat === "onshore" && !cc;
+  document.getElementById("discount-container").style.display = "block";
   document.getElementById("onshore-note").style.display       = autoOnshore ? "block" : "none";
+  const lbl = document.getElementById("discount-label");
+  const disc = document.getElementById("discount");
+  if (cc) {
+    lbl.textContent = "Scholarship ($ off tuition)";
+    disc.removeAttribute("max");
+  } else if (autoOnshore) {
+    lbl.textContent = "Extra discount (% on onshore rate)";
+    disc.setAttribute("max", "100");
+  } else {
+    lbl.textContent = "Discount (% on tuition)";
+    disc.setAttribute("max", "100");
+  }
 }
 
 function handleCategoryChange() {
@@ -903,6 +953,7 @@ function calculateGeneric(prog) {
   const tuitionBeforeDiscount = pp.tuition;
 
   let discount, discountAmount, discountLabel, discountShort;
+  let extraDiscountPct = 0, extraDiscountAmount = 0, extraDiscountNote = "";
   if (ccProg) {
     discountAmount = Math.max(0, Math.min(discountInput, tuitionBeforeDiscount));
     discount = tuitionBeforeDiscount > 0 ? (discountAmount / tuitionBeforeDiscount) * 100 : 0;
@@ -913,19 +964,33 @@ function calculateGeneric(prog) {
     discount = tuitionBeforeDiscount > 0 ? (discountAmount / tuitionBeforeDiscount) * 100 : 0;
     discountLabel = "Onshore rate discount (" + fmtPct(discount) + "%)";
     discountShort = "Onshore discount";
+    /* extra discount sits on top, taken off the onshore (charged) tuition */
+    const onshoreTuition = pp.chargedRate * duration;
+    extraDiscountPct    = Math.max(0, Math.min(discountInput, 100));
+    extraDiscountAmount = onshoreTuition * (extraDiscountPct / 100);
+    extraDiscountNote   = fmtPct(extraDiscountPct) + "% off " + money(onshoreTuition, country) + " onshore tuition";
   } else {
     discount = discountInput;
     discountAmount = tuitionBeforeDiscount * (discount / 100);
     discountLabel = "Tuition discount (" + discount + "%)";
     discountShort = "Discount";
   }
-  const tuitionFinal = tuitionBeforeDiscount - discountAmount;
+  const tuitionFinal = tuitionBeforeDiscount - discountAmount - extraDiscountAmount;
   const netRate      = duration > 0 ? tuitionFinal / duration : 0;
 
   /* accommodation */
   const billedUnits = accom.none ? 0
-    : (accom.unit === "month" ? Math.ceil(accomWeeks / 4) : accomWeeks);
+    : (accom.unit === "month" ? Math.ceil(accomWeeks / 4)
+      : accom.unit === "night" ? accomWeeks * 7
+      : accomWeeks);
   const accomBase   = accom.rate * billedUnits;
+  const accomAppFee = accom.none ? 0 : (accom.applicationFee || 0);
+  const accomDeposit = accom.none ? 0 : (accom.deposit || 0);
+  const amenitiesUnits = accom.none || !accom.amenitiesFee ? 0
+    : (accom.amenitiesUnit === "month" ? Math.ceil(accomWeeks / 4) : 1);
+  const accomAmenities = (accom.amenitiesFee || 0) * amenitiesUnits;
+  const accomMinWeeks  = accom.minWeeks || 0;
+  const accomMaxNights = accom.maxNights || 0;
   const pFee        = accom.none ? 0 : homestayPlacementFees[country];
   const extraNightFee = (accom.none || !accom.extraNight) ? 0 : accom.extraNight * extraNights;
 
@@ -934,6 +999,7 @@ function calculateGeneric(prog) {
     for (let i = 0; i < billedUnits; i++) {
       const curr = new Date(startDate);
       if (accom.unit === "month") curr.setMonth(startDate.getMonth() + i);
+      else if (accom.unit === "night") curr.setDate(startDate.getDate() + i);
       else curr.setDate(startDate.getDate() + i * 7);
       if (isHighSeasonMonth(country, curr.getMonth() + 1)) hsUnits++;
     }
@@ -961,6 +1027,7 @@ function calculateGeneric(prog) {
   const custodian   = country === "Canada" ? custodianFee : 0;
 
   const total = tuitionFinal + regFee + matTotal + accomBase + extraNightFee + pFee + hsTotal
+    + accomAppFee + accomAmenities
     + dietFee + supplementFee + insFee + transferFee + electiveFee + lessonsFee
     + custodian + i20Fee + changeFee + ieltsExamFee;
 
@@ -972,10 +1039,14 @@ function calculateGeneric(prog) {
     rateNote:pp.rateNote, packageWeeks:pp.packageWeeks, onshore:!!pp.onshore,
     tuitionBeforeDiscount:tuitionBeforeDiscount, discount:discount, discountAmount:discountAmount,
     discountLabel:discountLabel, discountShort:discountShort,
+    extraDiscountPct:extraDiscountPct, extraDiscountAmount:extraDiscountAmount,
+    extraDiscountNote:extraDiscountNote,
     tuitionFinal:tuitionFinal,
     regFee:regFee, matTotal:matTotal, matNote:matNote,
     accomName:accom.name, accomRate:accom.rate, accomUnit:accom.unit, accomWeeks:accomWeeks,
     billedUnits:billedUnits, accomBase:accomBase, extraNights:extraNights, extraNightFee:extraNightFee,
+    accomAppFee:accomAppFee, accomDeposit:accomDeposit, accomAmenities:accomAmenities,
+    amenitiesUnits:amenitiesUnits, accomMinWeeks:accomMinWeeks, accomMaxNights:accomMaxNights,
     pFee:pFee, hsUnits:hsUnits, hsRate:hsRate, hsTotal:hsTotal,
     dietFee:dietFee, studentType:studentType, supplementFee:supplementFee,
     insFee:insFee, transferType:transferType, transferFee:transferFee, optOutIns:optOutIns,
@@ -1034,16 +1105,30 @@ function buildFeeRows(d) {
     add(d.discountLabel, d.discountAmount,
         isSchol ? "Flat award, " + fmtPct(d.discount) + "% of tuition"
                 : fmtPct(d.discount) + "% off regular tuition", true);
-    add("Tuition (after " + word + ")", d.tuitionFinal,
-        money(d.netRate, d.country) + "/wk" + (d.onshore ? " onshore rate" : ""));
+    if (!(d.extraDiscountAmount > 0)) {
+      add("Tuition (after " + word + ")", d.tuitionFinal,
+          money(d.netRate, d.country) + "/wk" + (d.onshore ? " onshore rate" : ""));
+    }
+  }
+  if (d.extraDiscountAmount > 0) {
+    add("Extra discount (" + fmtPct(d.extraDiscountPct) + "%)",
+        d.extraDiscountAmount, d.extraDiscountNote, true);
+    add("Tuition (after discounts)", d.tuitionFinal,
+        money(d.netRate, d.country) + "/wk net");
   }
   if (d.regFee > 0) add("Registration / enrolment", d.regFee, "Flat");
   add("Course materials", d.matTotal, d.matNote);
   if (d.accomBase > 0) {
-    add("Accommodation - " + d.accomName, d.accomBase,
-        money(d.accomRate, d.country) + "/" + d.accomUnit + " x " + d.billedUnits + " " + d.accomUnit + (d.billedUnits === 1 ? "" : "s"));
+    let aNote = money(d.accomRate, d.country) + "/" + d.accomUnit + " x " + d.billedUnits + " " + d.accomUnit + (d.billedUnits === 1 ? "" : "s");
+    if (d.accomDeposit > 0) aNote += "; refundable security deposit " + money(d.accomDeposit, d.country) + " (not in total)";
+    if (d.accomMinWeeks > 0 && d.accomWeeks < d.accomMinWeeks) aNote += "; minimum stay " + d.accomMinWeeks + " weeks";
+    if (d.accomMaxNights > 0) aNote += "; maximum stay " + d.accomMaxNights + " nights";
+    add("Accommodation - " + d.accomName, d.accomBase, aNote);
   }
   if (d.extraNightFee > 0) add("Extra nights", d.extraNightFee, money(d.extraNightFee / d.extraNights, d.country) + "/night x " + d.extraNights);
+  if (d.accomAppFee > 0) add("Residence application fee", d.accomAppFee, "Flat, non-refundable");
+  if (d.accomAmenities > 0) add("Residence amenities fee", d.accomAmenities,
+      d.amenitiesUnits > 1 ? money(d.accomAmenities / d.amenitiesUnits, d.country) + "/month x " + d.amenitiesUnits : "Flat");
   if (d.pFee > 0) add("Accommodation placement", d.pFee, "Flat, non-refundable");
   if (d.hsTotal > 0) add("High season surcharge", d.hsTotal, money(d.hsRate, d.country) + " x " + d.hsUnits + " " + d.accomUnit + (d.hsUnits === 1 ? "" : "s"));
   if (d.dietFee > 0) add("Special diet supplement", d.dietFee, money(specialDietWeekly, d.country) + "/wk x " + d.accomWeeks + " wks");
@@ -1107,11 +1192,14 @@ const comparisonRows = [
   { label:"Duration", key:"duration", plain:true, suffix:" weeks" },
   { label:"Tuition (before discount)", key:"tuitionBeforeDiscount" },
   { label:"Discount",                  key:"discountAmount", negative:true },
+  { label:"Extra discount",            key:"extraDiscountAmount", negative:true },
   { label:"Tuition (after discount)",  key:"tuitionFinal" },
   { label:"Registration",              key:"regFee" },
   { label:"Materials",                 key:"matTotal" },
   { label:"Accommodation",             key:"accomBase" },
   { label:"Extra nights",              key:"extraNightFee" },
+  { label:"Residence application",     key:"accomAppFee" },
+  { label:"Residence amenities",       key:"accomAmenities" },
   { label:"Placement",                 key:"pFee" },
   { label:"High season",               key:"hsTotal" },
   { label:"Special diet",              key:"dietFee" },
@@ -2320,6 +2408,50 @@ function closeModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
+/* Weekly contact hours = lessons per week x lesson length. */
+function programmeLessonCount(prog) {
+  const m = String(prog || "").match(/\d+/g);
+  if (!m) return 0;
+  return parseInt(m[m.length - 1], 10) || 0;
+}
+
+function fmtHoursMins(totalMins) {
+  const h = Math.floor(totalMins / 60);
+  const r = totalMins % 60;
+  if (r === 0) return h + (h === 1 ? " hour" : " hours");
+  return h + (h === 1 ? " hour " : " hours ") + r + " minutes";
+}
+
+function lessonHoursData(country) {
+  const mins = country === "USA" ? 50 : 45;
+  let progs = [];
+  if (lastMode === "comparison" && lastCompResults.length) {
+    progs = lastCompResults.map(function(r) { return (r.data && r.data.progLabel) || r.name; });
+  } else if (lastCalcData) {
+    progs = [lastCalcData.progLabel || lastCalcData.prog];
+  } else {
+    const el = document.getElementById("program-type");
+    if (el && el.selectedIndex >= 0 && el.options.length) progs = [el.options[el.selectedIndex].text];
+  }
+  const out = [];
+  progs.forEach(function(p) {
+    const n = programmeLessonCount(p);
+    if (n > 0) out.push({ label: p, lessons: n, weekly: fmtHoursMins(n * mins) });
+  });
+  return out;
+}
+
+function getRepDetails() {
+  var n = (document.getElementById("rep-name") || {}).value || "";
+  var t = (document.getElementById("rep-title") || {}).value || "";
+  var e = (document.getElementById("rep-email") || {}).value || "";
+  return {
+    name:  n.trim() || "Your Admissions Advisor",
+    title: t.trim() || "Oxford International English Schools",
+    email: e.trim() || "admissions@oxfordinternational.com"
+  };
+}
+
 function showTemplateEmail() {
   const country = document.getElementById("country").value;
   const campus = document.getElementById("campus").value;
@@ -2344,10 +2476,12 @@ function showTemplateEmail() {
   };
   
   const info = campusInfo[campus] || campusInfo["Toronto"];
+  const rep = getRepDetails();
   const lessonMins = country === "USA" ? 50 : 45;
   const lessonNote = country === "USA"
     ? "At our New York campus each lesson is 50 minutes long."
     : "At our Canadian campuses each lesson is 45 minutes long.";
+  const lessonHours = lessonHoursData(country);
   const duration = document.getElementById("duration").value;
   const freeWeeks = document.getElementById("free-weeks").value;
   const totalWeeks = parseInt(duration) + parseInt(freeWeeks);
@@ -2369,22 +2503,24 @@ function showTemplateEmail() {
       <h3 style="margin:15px 0 10px 0; color:#333;">Your Quotation Breakdown</h3>
       <div style="background:#f9f9f9; padding:12px; border-left:4px solid #0077cc; border-radius:3px; font-size:11px; line-height:1.8; margin:10px 0;">`;
     
-    quotationSection += `<strong>Tuition (before discount):</strong> $${d.tuitionBeforeDiscount.toFixed(2)}<br>`;
-    if (d.discountAmount > 0) {
-      quotationSection += `<strong>Discount (${d.discount}%):</strong> -$${d.discountAmount.toFixed(2)}<br>`;
-      quotationSection += `<strong>Tuition (after discount):</strong> $${d.tuitionFinal.toFixed(2)}<br>`;
-    }
-    quotationSection += `<strong>Registration:</strong> $${d.regFee.toFixed(2)}<br>`;
-    quotationSection += `<strong>Materials:</strong> $${d.matTotal.toFixed(2)}<br>`;
-    if (d.hBase > 0) quotationSection += `<strong>Accommodation:</strong> $${d.hBase.toFixed(2)}<br>`;
-    if (d.pFee > 0) quotationSection += `<strong>Placement fee:</strong> $${d.pFee.toFixed(2)}<br>`;
-    if (d.hsTotal > 0) quotationSection += `<strong>High season:</strong> $${d.hsTotal.toFixed(2)}<br>`;
-    quotationSection += `<strong>Insurance:</strong> $${d.insFee.toFixed(2)}<br>`;
-    if (d.transferFee > 0) quotationSection += `<strong>Transfer:</strong> $${d.transferFee.toFixed(2)}<br>`;
-    if (d.supplementFee > 0) quotationSection += `<strong>Minor supplement:</strong> $${d.supplementFee.toFixed(2)}<br>`;
-    
+    /* Header details, minus the student category (agents only). */
+    quoteHeaderRows(d).forEach(function(row) {
+      if (row[0] === "Category") return;
+      quotationSection += `<div style="margin-bottom:3px;"><span style="color:#777;">${row[0]}:</span> <strong>${row[1]}</strong></div>`;
+    });
+    quotationSection += `<hr style="border:none; border-top:1px solid #ddd; margin:10px 0;">`;
+
+    /* Every fee line, straight from the same builder the on-screen quote uses. */
+    buildFeeRows(d).forEach(function(item) {
+      const amount = (item.negative && item.value > 0 ? "-" : "") + money(item.value, d.country);
+      const colour = item.negative && item.value > 0 ? "#c0392b" : "#333";
+      quotationSection += `<div style="margin-bottom:2px;"><strong>${item.label}:</strong> <span style="color:${colour};">${amount}</span>`;
+      if (item.note) quotationSection += ` <span style="color:#999; font-size:10px;">(${item.note})</span>`;
+      quotationSection += `</div>`;
+    });
+
     quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;">`;
-    quotationSection += `<strong style="font-size:13px; color:#0077cc;">TOTAL: $${d.total.toFixed(2)}</strong>`;
+    quotationSection += `<strong style="font-size:13px; color:#0077cc;">TOTAL: ${money(d.total, d.country)}</strong>`;
     quotationSection += `</div>`;
     
   } else if (lastMode === 'comparison' && lastCompResults.length) {
@@ -2454,7 +2590,14 @@ function showTemplateEmail() {
       
       <div style="background:#fff8e1; border-left:4px solid #FFB84D; padding:12px 14px; border-radius:3px; margin:15px 0;">
         <strong style="color:#2c1a70;">Please note - lesson length</strong><br>
-        ${lessonNote} All lesson counts in your programme (for example Intensive 30 = 30 lessons per week) are based on ${lessonMins}-minute lessons.
+        ${lessonNote} Lesson counts are based on ${lessonMins}-minute lessons, so your weekly class time is:
+        <table style="margin:8px 0 0 0; border-collapse:collapse; font-size:13px;">
+          ${lessonHours.map(function(h) { return '<tr>' +
+              '<td style="padding:3px 12px 3px 0; color:#333;">' + h.label + '</td>' +
+              '<td style="padding:3px 12px 3px 0; color:#777;">' + h.lessons + ' lessons/week</td>' +
+              '<td style="padding:3px 0; font-weight:bold; color:#2c1a70;">' + h.weekly + ' per week</td>' +
+            '</tr>'; }).join('')}
+        </table>
       </div>
 
       <h3 style="margin:15px 0 10px 0; color:#333;">Your Quotation Summary</h3>
@@ -2477,26 +2620,31 @@ function showTemplateEmail() {
       </ol>
       
       <p style="margin:15px 0 10px 0;"><strong>Questions?</strong><br>
-      We're here to help. Reply to this email or contact us at salnashef@oxfordinternational.com</p>
+      We're here to help. Reply to this email or contact us at ${rep.email}</p>
       
       <p>Looking forward to seeing you in class at our ${campus} campus.</p>
       
       <p>Best regards,<br>
-      <strong>Saleem</strong><br>
-      Divisional Sales Manager<br>
+      <strong>${rep.name}</strong><br>
+      ${rep.title}<br>
       Oxford International English Schools - ${campus}</p>
     </div>
   `;
   
   actions.innerHTML = `
-    <button class="btn btn-green" onclick="copyTemplateEmailToClipboard('${campus}', '${country}')" style="width:200px; margin-right:10px;">Copy for Email</button>
-    <button class="btn" onclick="closeModal()" style="width:150px;">Close</button>
+    <button class="btn btn-green" onclick="copyTemplateEmailToClipboard('${campus}', '${country}')" style="width:230px; margin-right:10px;">Copy for Email (with images)</button>
+    <button class="btn" onclick="copyTemplateEmailPlain('${campus}', '${country}')" style="width:170px; margin-right:10px;">Copy as plain text</button>
+    <button class="btn" onclick="closeModal()" style="width:120px;">Close</button>
   `;
   
   modal.style.display = "block";
 }
 
-function copyTemplateEmailToClipboard(campus, country) {
+function copyTemplateEmailPlain(campus, country) {
+  copyTemplateEmailToClipboard(campus, country, true);
+}
+
+function copyTemplateEmailToClipboard(campus, country, plainOnly) {
   const campusInfo = {
     "Vancouver": {
       address: "815 W Hastings St #250, Vancouver, BC V6C 1B4",
@@ -2517,10 +2665,12 @@ function copyTemplateEmailToClipboard(campus, country) {
   };
   
   const info = campusInfo[campus] || campusInfo["Toronto"];
+  const rep = getRepDetails();
   const lessonMins = country === "USA" ? 50 : 45;
   const lessonNote = country === "USA"
     ? "At our New York campus each lesson is 50 minutes long."
     : "At our Canadian campuses each lesson is 45 minutes long.";
+  const lessonHours = lessonHoursData(country);
   const duration = document.getElementById("duration").value;
   const freeWeeks = document.getElementById("free-weeks").value;
   const totalWeeks = parseInt(duration) + parseInt(freeWeeks);
@@ -2535,21 +2685,17 @@ function copyTemplateEmailToClipboard(campus, country) {
   if (lastMode === 'single' && lastCalcData) {
     const d = lastCalcData;
     quotationText = `\nQUOTATION BREAKDOWN\n${"=".repeat(50)}\n`;
-    quotationText += `Tuition (before discount): $${d.tuitionBeforeDiscount.toFixed(2)}\n`;
-    if (d.discountAmount > 0) {
-      quotationText += `Discount (${d.discount}%): -$${d.discountAmount.toFixed(2)}\n`;
-      quotationText += `Tuition (after discount): $${d.tuitionFinal.toFixed(2)}\n`;
-    }
-    quotationText += `Registration: $${d.regFee.toFixed(2)}\n`;
-    quotationText += `Materials: $${d.matTotal.toFixed(2)}\n`;
-    if (d.hBase > 0) quotationText += `Accommodation: $${d.hBase.toFixed(2)}\n`;
-    if (d.pFee > 0) quotationText += `Placement fee: $${d.pFee.toFixed(2)}\n`;
-    if (d.hsTotal > 0) quotationText += `High season: $${d.hsTotal.toFixed(2)}\n`;
-    quotationText += `Insurance: $${d.insFee.toFixed(2)}\n`;
-    if (d.transferFee > 0) quotationText += `Transfer: $${d.transferFee.toFixed(2)}\n`;
-    if (d.supplementFee > 0) quotationText += `Minor supplement: $${d.supplementFee.toFixed(2)}\n`;
+    quoteHeaderRows(d).forEach(function(row) {
+      if (row[0] === "Category") return;
+      quotationText += row[0] + ": " + row[1] + "\n";
+    });
+    quotationText += `${"-".repeat(50)}\n`;
+    buildFeeRows(d).forEach(function(item) {
+      const amount = (item.negative && item.value > 0 ? "-" : "") + money(item.value, d.country);
+      quotationText += item.label + ": " + amount + (item.note ? " (" + item.note + ")" : "") + "\n";
+    });
     quotationText += `${"=".repeat(50)}\n`;
-    quotationText += `TOTAL: $${d.total.toFixed(2)}\n`;
+    quotationText += `TOTAL: ${money(d.total, d.country)}\n`;
     
   } else if (lastMode === 'comparison' && lastCompResults.length) {
     quotationText = `\nPROGRAMME COMPARISON\n${"=".repeat(50)}\n`;
@@ -2598,7 +2744,8 @@ Your Progress Levels
 Ten OI levels mapped to CEFR A1-C2 and to IELTS, TOEFL iBT, Cambridge, TOEIC and Oxford ELLT. (See the full Progress Chart in the HTML version of this email.)
 
 PLEASE NOTE - LESSON LENGTH
-${lessonNote} All lesson counts in your programme (for example Intensive 30 = 30 lessons per week) are based on ${lessonMins}-minute lessons.
+${lessonNote} Lesson counts are based on ${lessonMins}-minute lessons, so your weekly class time is:
+${lessonHours.map(function(h) { return "  " + h.label + " - " + h.lessons + " lessons/week = " + h.weekly + " per week"; }).join("\n")}
 
 YOUR QUOTATION SUMMARY
 
@@ -2627,18 +2774,69 @@ HOW TO ENROLL - 7 EASY STEPS
 
 QUESTIONS?
 
-We're here to help. Reply to this email or contact us at salnashef@oxfordinternational.com
+We're here to help. Reply to this email or contact us at ${rep.email}
 
 Looking forward to seeing you in class at our ${campus} campus.
 
 Best regards,
-Saleem
-Divisional Sales Manager
+${rep.name}
+${rep.title}
 Oxford International English Schools - ${campus}`;
 
-  navigator.clipboard.writeText(text).then(function() {
-    alert("Template email copied to clipboard - ready to paste into email!");
-  });
+  if (plainOnly) {
+    navigator.clipboard.writeText(text).then(function() {
+      alert("Template email copied as plain text.");
+    });
+    return;
+  }
+  copyRichEmail(text);
+}
+
+/* Copies the rendered email exactly as shown - images, tables, colours and all.
+   Writes text/html (rich) and text/plain (fallback) to the clipboard together,
+   so email clients paste the formatted version and plain-text clients still work. */
+function copyRichEmail(plainText) {
+  const source = document.getElementById("modal-content");
+  if (!source) { return legacyCopy(plainText); }
+
+  /* Wrap in a self-contained document with the base font so the styling
+     survives the paste rather than inheriting the mail client's defaults. */
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#333333;">' +
+    source.innerHTML +
+    '</div>';
+
+  const fallback = plainText || source.innerText || "";
+
+  function done(msg) {
+    const btns = document.querySelectorAll("#modal-actions .btn-green");
+    if (btns.length) {
+      const b = btns[0], orig = b.textContent;
+      b.textContent = "Copied!";
+      setTimeout(function(){ b.textContent = orig; }, 2500);
+    }
+    if (msg) alert(msg);
+  }
+
+  function legacyCopy(txt) {
+    navigator.clipboard.writeText(txt).then(function() {
+      done("Template email copied as plain text (images not included).");
+    });
+  }
+
+  if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+    const item = new ClipboardItem({
+      "text/html":  new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([fallback], { type: "text/plain" })
+    });
+    navigator.clipboard.write([item]).then(function() {
+      done("");
+    }).catch(function() {
+      legacyCopy(fallback);
+    });
+  } else {
+    legacyCopy(fallback);
+  }
 }
 
 /* =========================================================================
