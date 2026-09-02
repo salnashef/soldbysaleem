@@ -2462,12 +2462,13 @@ function scheduleHTMLForEmail() {
   html = html.replace(/color:\s*#FFB84D/gi, "color:#ffffff");
   html = html.replace(/color:\s*rgb\(\s*255\s*,\s*184\s*,\s*77\s*\)/gi, "color:#ffffff");
 
-  /* Mail clients routinely strip the CSS "background" shorthand and reset text
-     colour to their own default, which leaves dark cells showing black text on
-     a dark fill. Belt and braces: mirror the fill into the legacy bgcolor
-     attribute and wrap the text of dark cells in a <font color> tag, both of
-     which Outlook and Gmail honour. */
+  /* Mail clients apply their own stylesheet to table cells, which outranks a
+     plain inline colour and leaves dark cells showing the client's default
+     dark text on a dark fill. Four defences, since any one can be stripped:
+     !important on the cell, a legacy bgcolor attribute for the fill, and both
+     a <span> and a <font> carrying white on the text itself. */
   const DARK_FILLS = ["#2c1a70", "#ff6b6b", "#534ab7", "#0077cc"];
+  const WHITE = "#ffffff";
 
   html = html.replace(/<(td|th)([^>]*)>([\s\S]*?)<\/\1>/gi, function(match, tag, attrs, inner) {
     const bgMatch = attrs.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,6})/i);
@@ -2478,21 +2479,28 @@ function scheduleHTMLForEmail() {
     if (!/bgcolor\s*=/i.test(newAttrs)) newAttrs += ' bgcolor="' + bg + '"';
 
     if (DARK_FILLS.indexOf(bg) !== -1) {
-      /* ensure the cell itself declares white text (ignoring background-color) */
-      if (!/(^|[;\s"'])color\s*:/i.test(newAttrs.replace(/background-color\s*:/gi, "bg:"))) {
-        newAttrs = /style\s*=\s*"/i.test(newAttrs)
-          ? newAttrs.replace(/style\s*=\s*"/i, 'style="color:#ffffff; ')
-          : newAttrs + ' style="color:#ffffff;"';
-      } else {
-        newAttrs = newAttrs.replace(/(^|[;\s"'])color\s*:\s*[^;"']+/gi, function(m2, lead) {
-          return lead + "color:#ffffff";
-        });
-      }
+      /* strip any existing text colour, ignoring background-color */
+      newAttrs = newAttrs.replace(/(^|[;\s"'])color\s*:\s*[^;"']+;?/gi, function(m2, lead) {
+        return lead;
+      });
+      newAttrs = /style\s*=\s*"/i.test(newAttrs)
+        ? newAttrs.replace(/style\s*=\s*"/i, 'style="color:' + WHITE + ' !important; ')
+        : newAttrs + ' style="color:' + WHITE + ' !important;"';
+
       if (inner.replace(/<[^>]*>/g, "").trim()) {
-        inner = '<font color="#ffffff">' + inner + '</font>';
+        inner = '<span style="color:' + WHITE + ' !important;"><font color="' + WHITE + '">' +
+                inner + '</font></span>';
       }
     }
     return "<" + tag + newAttrs + ">" + inner + "</" + tag + ">";
+  });
+
+  /* Row-level colours survive in clients that drop cell-level ones, so make
+     the header row's white text explicit there too. */
+  html = html.replace(/<tr([^>]*background(?:-color)?:\s*#2c1a70[^>]*)>/gi, function(m, attrs) {
+    if (/bgcolor\s*=/i.test(attrs)) return "<tr" + attrs + ">";
+    return '<tr' + attrs.replace(/color\s*:\s*white/i, "color:" + WHITE + " !important") +
+           ' bgcolor="#2c1a70">';
   });
 
   return html;
