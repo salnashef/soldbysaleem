@@ -2639,16 +2639,16 @@ function showTemplateEmail() {
       <h3 style="margin:15px 0 10px 0; color:#333;">Programme Comparison</h3>
       <div style="background:#f9f9f9; padding:12px; border-left:4px solid #534AB7; border-radius:3px; margin:10px 0; font-size:11px; overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; font-size:11px;">
-      <tr style="background:#534AB7; color:white;">
-        <th style="padding:8px; text-align:left; border:1px solid #ddd;">Fee item</th>`;
+      <tr bgcolor="#e9e7f7" style="background-color:#e9e7f7;">
+        <th bgcolor="#e9e7f7" style="padding:8px; text-align:left; border:1px solid #ddd; background-color:#e9e7f7; color:#3d3590;">Fee item</th>`;
     
     lastCompResults.forEach(r => {
-      quotationSection += `<th style="padding:8px; text-align:center; border:1px solid #ddd;">${r.name}</th>`;
+      quotationSection += `<th bgcolor="#e9e7f7" style="padding:8px; text-align:center; border:1px solid #ddd; background-color:#e9e7f7; color:#3d3590;">${r.name}</th>`;
     });
     quotationSection += `</tr>`;
     
     activeComparisonRows(lastCompResults).forEach(row => {
-      quotationSection += `<tr style="background:#fafafa;">
+      quotationSection += `<tr bgcolor="#fafafa" style="background-color:#fafafa;">
         <td style="padding:8px; border:1px solid #ddd;"><strong>${row.label}</strong></td>`;
       lastCompResults.forEach(r => {
         const val = r.data[row.key];
@@ -2659,7 +2659,7 @@ function showTemplateEmail() {
       quotationSection += `</tr>`;
     });
     
-    quotationSection += `<tr style="background:#e8f4f8; font-weight:bold;">
+    quotationSection += `<tr bgcolor="#e8f4f8" style="background-color:#e8f4f8; font-weight:bold;">
       <td style="padding:8px; border:1px solid #ddd;"><strong>TOTAL</strong></td>`;
     lastCompResults.forEach(r => {
       quotationSection += `<td style="padding:8px; text-align:center; border:1px solid #ddd; color:#0077cc;">${money(r.data.total, r.data.country)}</td>`;
