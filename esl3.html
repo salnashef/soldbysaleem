@@ -71,7 +71,34 @@
 <select id="school" onchange="handleSchoolChange()">
   <option value="english" selected>English Language Schools</option>
   <option value="career">Career Colleges</option>
+  <option value="junior">Junior Programmes (Summer Camps)</option>
 </select>
+
+<div id="junior-panel" style="display:none; background:#f0f8ff; padding:12px; border-radius:5px; border-left:4px solid #0077cc; margin-bottom:12px;">
+  <div class="field-row">
+    <div>
+      <label>Stay length</label>
+      <select id="junior-tier" onchange="handleJuniorTierChange()"></select>
+    </div>
+    <div>
+      <label>Start date <span class="field-hint" id="junior-window"></span></label>
+      <select id="junior-start"></select>
+    </div>
+  </div>
+  <div id="junior-transfer-wrap" style="display:none;">
+    <div class="field-row">
+      <div>
+        <label>Airport transfer</label>
+        <select id="junior-transfer"></select>
+      </div>
+      <div>
+        <label>Unaccompanied minor <span class="field-hint">(airport)</span></label>
+        <select id="junior-um"></select>
+      </div>
+    </div>
+  </div>
+  <div id="junior-detail" style="font-size:11px; color:#666; line-height:1.6;"></div>
+</div>
 
 <div class="field-row">
   <div>
@@ -113,7 +140,7 @@
   </div>
 </div>
 
-<div class="field-row">
+<div class="field-row" id="free-weeks-row">
   <div>
     <label>Free weeks (promotional)</label>
     <input type="number" id="free-weeks" min="0" value="0">
@@ -123,7 +150,7 @@
 
 <div id="program-note" class="prog-note"></div>
 
-<div class="field-row">
+<div class="field-row" id="accom-row">
   <div>
     <label>Accommodation</label>
     <select id="homestay-type" onchange="updateAccommodationHint()"></select>
@@ -135,7 +162,7 @@
 </div>
 
 <div class="field-row">
-  <div>
+  <div id="transfer-wrap">
     <label>Transfer type</label>
     <select id="transfer-type"></select>
   </div>
@@ -148,7 +175,7 @@
   </div>
 </div>
 
-<div>
+<div id="student-type-wrap">
   <label>Student type <span class="field-hint">(minor supplement applies to Canada homestay)</span></label>
   <select id="student-type">
     <option value="Adult" selected>Adult</option>
@@ -156,8 +183,12 @@
   </select>
 </div>
 
-<label style="font-weight:normal; font-size:13px; margin-bottom:12px;">
+<label style="font-weight:normal; font-size:13px; margin-bottom:6px;">
   <input type="checkbox" id="opt-out-insurance"> Opt out from insurance
+</label>
+
+<label style="font-weight:normal; font-size:13px; margin-bottom:12px;">
+  <input type="checkbox" id="is-extension"> Extension <span class="field-hint">(continuing student - no enrolment fee)</span>
 </label>
 
 <details id="extras-panel">
@@ -218,16 +249,52 @@
 <div id="schedule-display" style="display:none; margin-top:20px;">
   <div id="elective-selector" style="display:none; margin-bottom:15px; padding:12px; background:#fffbf0; border-left:4px solid #e67e22; border-radius:3px;">
     <label style="display:block; font-weight:bold; font-size:13px; color:#555; margin-bottom:8px;" id="elective-label">Elective track option</label>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+
+    <!-- Semi Intensive 26: one track only, A by default or C instead -->
+    <div id="elective-radios" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
       <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
-        <input type="radio" name="elective-option" value="A" onclick="updateSchedule()" checked> 
-        <span style="margin-left:6px;" id="opt-a-label">Option A (Elective A)</span>
+        <input type="radio" name="elective-option" value="A" onclick="updateSchedule()" checked>
+        <span style="margin-left:6px;" id="opt-a-label">Elective A (default)</span>
       </label>
       <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
-        <input type="radio" name="elective-option" value="C" onclick="updateSchedule()"> 
-        <span style="margin-left:6px;" id="opt-c-label">Option C (Elective C)</span>
+        <input type="radio" name="elective-option" value="C" onclick="updateSchedule()">
+        <span style="margin-left:6px;" id="opt-c-label">Elective C instead</span>
       </label>
     </div>
+
+    <!-- Intensive 30: any combination of the four tracks, A and B by default -->
+    <div id="elective-checks" style="display:none; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
+      <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+        <input type="checkbox" class="elective-check" value="A" onchange="updateSchedule()" checked>
+        <span style="margin-left:6px;">Elective A</span>
+      </label>
+      <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+        <input type="checkbox" class="elective-check" value="B" onchange="updateSchedule()" checked>
+        <span style="margin-left:6px;">Elective B</span>
+      </label>
+      <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+        <input type="checkbox" class="elective-check" value="C" onchange="updateSchedule()">
+        <span style="margin-left:6px;">Elective C</span>
+      </label>
+      <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+        <input type="checkbox" class="elective-check" value="D" onchange="updateSchedule()">
+        <span style="margin-left:6px;">Elective D</span>
+      </label>
+    </div>
+    <div id="activity-toggles" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid #f0dcc0;">
+      <label style="display:block; font-weight:bold; font-size:12px; color:#555; margin-bottom:6px;">Afternoon activities</label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+          <input type="checkbox" id="show-social" onchange="updateSchedule()" checked>
+          <span style="margin-left:6px;">Social Programme</span>
+        </label>
+        <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
+          <input type="checkbox" id="show-study-club" onchange="updateSchedule()" checked>
+          <span style="margin-left:6px;">Study Club</span>
+        </label>
+      </div>
+    </div>
+    <div id="elective-warning" style="display:none; margin-top:8px; font-size:11px; color:#c0392b;"></div>
   </div>
   <div id="schedule-content" style="background:#f5f5f5; padding:15px; border-radius:5px; margin-top:10px; font-size:12px; line-height:1.8; border-left: 4px solid #0077cc;"></div>
 </div>
@@ -434,6 +501,165 @@ const careerCollegePrograms = {
   ]
 };
 
+/* ─────────────── Junior Programmes (2027 Summer Camps) ───────────────
+   Package pricing taken from the Canada/USA Junior Programmes brochure.
+   Residential and homestay packages are priced by nights; day camp and
+   lessons-only packages by weeks. "-" entries in the brochure mean the
+   tier is not offered, so those tiers are simply absent here. */
+const juniorVenues = {
+  Canada: [
+    { value:"TMU", label:"Toronto Metropolitan University", city:"Toronto",
+      packages:[
+        { value:"TMU-STEM-RES", label:"Summer STEM - Residential", course:"STEM", accom:"Residential",
+          room:"Shared multi-room apartment, shared bathroom", ages:"8-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:3095,13:5605,14:5705,21:8305,28:10895} },
+        { value:"TMU-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"Shared multi-room apartment, shared bathroom", ages:"8-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2970,13:5390,14:5490,21:8020,28:10490} },
+        { value:"TMU-LIGHT-RES", label:"Light - Residential", course:"Light", accom:"Residential",
+          room:"Shared multi-room apartment, shared bathroom", ages:"8-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2595,13:4805,14:4905} },
+        { value:"TMU-STEM-DAY", label:"Summer STEM - Day Camp", course:"STEM", accom:"None (day camp)",
+          room:"-", ages:"8-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:1560,2:2685,3:3985,4:5135} },
+        { value:"TMU-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"8-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:1360,2:2285,3:3385,4:4335} },
+        { value:"TMU-STEM-LESSONS", label:"Summer STEM - Lessons Only", course:"STEM", accom:"None (lessons only)",
+          room:"-", ages:"8-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:775,2:1545,3:2295,4:3035} },
+        { value:"TMU-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"8-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:625,2:1245,3:1845,4:2435} }
+      ] },
+    { value:"UBC", label:"University of British Columbia", city:"Vancouver",
+      packages:[
+        { value:"UBC-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"Single room, single gender shared communal bathroom", ages:"9-17", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2995,13:5205,14:5305,21:7645,28:9995} },
+        { value:"UBC-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"9-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:1540,2:2620,3:3725,4:4800} },
+        { value:"UBC-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"9-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:670,2:1325,3:1990,4:2780} }
+      ] },
+    { value:"OI-TORONTO", label:"Oxford International Toronto (Downtown Homestay)", city:"Toronto",
+      packages:[
+        { value:"OIT-HOMESTAY", label:"Classic - Downtown Homestay", course:"Classic", accom:"Homestay",
+          room:"Twin room, shared bathroom", ages:"10-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2460,13:3615,14:3715,21:5020,28:6315} }
+      ] },
+    { value:"OI-VANCOUVER", label:"Oxford International Vancouver (Downtown Homestay)", city:"Vancouver",
+      packages:[
+        { value:"OIV-HOMESTAY", label:"Classic - Downtown Homestay", course:"Classic", accom:"Homestay",
+          room:"Twin room, shared bathroom", ages:"10-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2460,13:3615,14:3715,21:5020,28:6315} }
+      ] }
+  ],
+  USA: [
+    { value:"FAU", label:"Florida Atlantic University", city:"Boca Raton",
+      packages:[
+        { value:"FAU-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"4-bed apartments (single and twin), semi-private bathroom", ages:"12-17", unit:"nights",
+          start:"2027-06-27", end:"2027-08-01", prices:{7:2400,13:4135,14:4235,21:6085,28:7935} },
+        { value:"FAU-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"12-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-01", prices:{1:1200,2:2045,3:2895,4:3750} },
+        { value:"FAU-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"12-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-01", prices:{1:540,2:865,3:1115,4:1370} }
+      ] },
+    { value:"LIU", label:"Long Island University, Brooklyn", city:"New York",
+      packages:[
+        { value:"LIU-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"Dorm-style twin rooms, shared communal bathroom", ages:"12-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2330,13:4065,14:4165,21:6005,28:7525} },
+        { value:"LIU-LIGHT-RES", label:"Light - Residential", course:"Light", accom:"Residential",
+          room:"Dorm-style twin rooms, shared communal bathroom", ages:"12-18", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2200,13:3805,14:3905} },
+        { value:"LIU-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"12-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:1235,2:2135,3:3045,4:3945} },
+        { value:"LIU-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"12-18", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:540,2:885,3:1160,4:1435} }
+      ] },
+    { value:"PEPPERDINE", label:"Pepperdine University", city:"Los Angeles",
+      packages:[
+        { value:"PEP-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"4-twin bedroom apartment, semi-private bathroom", ages:"10-17", unit:"nights",
+          start:"2027-06-27", end:"2027-07-31", prices:{7:2485,13:4700,14:4800,21:6820,28:8815} },
+        { value:"PEP-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"10-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-07-31", prices:{1:1410,2:2710,3:4125,4:5315} },
+        { value:"PEP-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"10-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-07-31", prices:{1:540,2:1030,3:1465,4:1845} }
+      ] },
+    { value:"BERKELEY", label:"University of California, Berkeley", city:"Berkeley",
+      packages:[
+        { value:"UCB-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
+          room:"Double or triple room, shared communal bathroom", ages:"13-17", unit:"nights",
+          start:"2027-06-27", end:"2027-08-08", prices:{7:2800,13:4870,14:4970,21:7320,28:9700} },
+        { value:"UCB-DAY", label:"Day Camp", course:"Day camp", accom:"None (day camp)",
+          room:"-", ages:"13-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:1410,2:2710,3:4125,4:5315} },
+        { value:"UCB-LESSONS", label:"Lessons Only", course:"Lessons only", accom:"None (lessons only)",
+          room:"-", ages:"13-17", unit:"weeks",
+          start:"2027-06-27", end:"2027-08-08", prices:{1:540,2:1030,3:1465,4:1845} }
+      ] }
+  ]
+};
+
+/* Junior extra fees, per the brochure's Extra Fees tables. */
+const juniorFees = {
+  Canada: { registration:185, changeFee:120, custodianship:125, insurancePerDay:3.25,
+            under10PerWeek:250, sharingPerWeek:100, adultTransportPerDay:70,
+            umArrival:105, umDeparture:160, umRoundTrip:230, transfersIncluded:true },
+  USA:    { registration:200, changeFee:100, custodianship:0, insurancePerDay:4.50,
+            under10PerWeek:0, sharingPerWeek:100, adultTransportPerDay:0,
+            umArrival:150, umDeparture:185, umRoundTrip:335, transfersIncluded:false,
+            transferOneWay:{ FAU:260, LIU:260, PEPPERDINE:250, BERKELEY:250 },
+            transferAirports:{ FAU:"MIA / FLL", LIU:"JFK / EWR / LGA", PEPPERDINE:"LAX", BERKELEY:"SFO" } }
+};
+
+const juniorPackageIndex = {};
+Object.keys(juniorVenues).forEach(function(co) {
+  juniorVenues[co].forEach(function(v) {
+    v.packages.forEach(function(p) {
+      juniorPackageIndex[p.value] = Object.assign({}, p, { venue:v.value, venueLabel:v.label, country:co, city:v.city });
+    });
+  });
+});
+
+function isJunior() {
+  return document.getElementById("school").value === "junior";
+}
+
+/* Weekly arrival dates inside the programme window that still leave room for
+   the chosen stay length. */
+function juniorStartDates(pkg, tier) {
+  if (!pkg) return [];
+  const out = [];
+  const start = new Date(pkg.start + "T00:00:00");
+  const end   = new Date(pkg.end + "T00:00:00");
+  const days  = pkg.unit === "nights" ? tier : tier * 7;
+  for (let d = new Date(start); ; d.setDate(d.getDate() + 7)) {
+    const finish = new Date(d);
+    finish.setDate(d.getDate() + days);
+    if (finish > end) break;
+    out.push(new Date(d));
+  }
+  if (!out.length) out.push(new Date(start));
+  return out;
+}
+
+function juniorTiers(pkg) {
+  if (!pkg) return [];
+  return Object.keys(pkg.prices).map(Number).sort(function(a, b){ return a - b; });
+}
+
 const ccIndex = {};
 Object.keys(careerCollegePrograms).forEach(function(campus) {
   careerCollegePrograms[campus].forEach(function(p) { ccIndex[p.value] = p; });
@@ -631,21 +857,47 @@ let lastCalcData   = null;
    ========================================================================= */
 function handleSchoolChange() {
   const cc = isCareerCollege();
+  const jr = isJunior();
   const countryEl = document.getElementById("country");
   const usaOpt = countryEl.querySelector('option[value="USA"]');
   if (usaOpt) usaOpt.disabled = cc;
   if (cc) countryEl.value = "Canada";
+
+  /* Junior is package priced with its own stay lengths and fixed camp dates,
+     so the weekly ESL controls are stood down while it is selected. */
+  document.getElementById("junior-panel").style.display = jr ? "block" : "none";
+  document.getElementById("start-date").parentElement.style.display = jr ? "none" : "block";
+  const extras = document.getElementById("extras-panel");
+  if (extras) extras.style.display = jr ? "none" : "block";
+  const catEl = document.getElementById("student-category");
+  if (catEl) catEl.parentElement.style.display = jr ? "none" : "block";
+
+  /* Junior packages bundle accommodation, meals and (in Canada) transfers, are
+     for under-18s by definition, and carry no free-week promotions - so those
+     controls are stood down and reset rather than left to mislead. */
+  ["accom-row", "free-weeks-row", "student-type-wrap", "transfer-wrap"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = jr ? "none" : "";   /* "" restores the stylesheet's own display */
+  });
+  if (jr) {
+    document.getElementById("free-weeks").value = 0;
+    document.getElementById("homestay-duration").value = 0;
+    document.getElementById("student-type").value = "Adult";
+    const ht = document.getElementById("homestay-type");
+    if (ht && ht.querySelector('option[value="No Accommodation"]')) ht.value = "No Accommodation";
+  }
 
   /* ESL-only extras */
   document.getElementById("elective-addon").parentElement.style.display = cc ? "none" : "block";
   document.getElementById("lesson-package").parentElement.style.display = cc ? "none" : "block";
 
   const dur = document.getElementById("duration");
-  dur.readOnly = cc;
-  dur.style.backgroundColor = cc ? "#eee" : "#f9f9f9";
-  document.getElementById("duration-hint").textContent = cc ? "(set by programme)" : "";
+  dur.readOnly = cc || jr;
+  dur.style.backgroundColor = (cc || jr) ? "#eee" : "#f9f9f9";
+  document.getElementById("duration-hint").textContent =
+    cc ? "(set by programme)" : jr ? "(set by stay length)" : "";
 
-  if (!cc) dur.value = DEFAULT_WEEKS;
+  if (!cc && !jr) dur.value = DEFAULT_WEEKS;
 
   document.getElementById("discount").value = 0;
 
@@ -678,11 +930,140 @@ function handleCategoryChange() {
   updateProgramTypeDropdown();
 }
 
+/* USA junior camps charge airport transfers per centre (Canada includes them).
+   Unaccompanied minor handling is charged separately, by direction. */
+function juniorTransferOptions(country, venue) {
+  const fees = juniorFees[country];
+  if (!fees || fees.transfersIncluded) return [];
+  const one = (fees.transferOneWay || {})[venue] || 0;
+  const air = (fees.transferAirports || {})[venue] || "";
+  const suffix = air ? " (" + air + ")" : "";
+  return [
+    { value:"none",      label:"No transfer",                 fee:0 },
+    { value:"arrival",   label:"Arrival only" + suffix,       fee:one },
+    { value:"departure", label:"Departure only" + suffix,     fee:one },
+    { value:"return",    label:"Return (both ways)" + suffix, fee:one * 2 }
+  ];
+}
+
+function juniorUmOptions(country) {
+  const fees = juniorFees[country] || {};
+  return [
+    { value:"none",      label:"Not required",   fee:0 },
+    { value:"arrival",   label:"Arrival only",   fee:fees.umArrival   || 0 },
+    { value:"departure", label:"Departure only", fee:fees.umDeparture || 0 },
+    /* the brochure prices a round trip separately - it is not the sum of the legs */
+    { value:"round",     label:"Round trip",     fee:fees.umRoundTrip || ((fees.umArrival || 0) + (fees.umDeparture || 0)) }
+  ];
+}
+
+function updateJuniorTransfers() {
+  const country = document.getElementById("country").value;
+  const venue   = document.getElementById("campus").value;
+  const wrap    = document.getElementById("junior-transfer-wrap");
+  const sel     = document.getElementById("junior-transfer");
+  const umSel   = document.getElementById("junior-um");
+  if (!wrap || !sel) return;
+
+  const opts = juniorTransferOptions(country, venue);
+  if (!opts.length) { wrap.style.display = "none"; return; }
+  wrap.style.display = "block";
+
+  const prev = sel.value;
+  sel.innerHTML = "";
+  opts.forEach(function(o) {
+    const el = document.createElement("option");
+    el.value = o.value;
+    el.textContent = o.label + (o.fee > 0 ? "  -  " + money(o.fee, country) : "");
+    sel.appendChild(el);
+  });
+  if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+
+  if (umSel) {
+    const umPrev = umSel.value;
+    umSel.innerHTML = "";
+    juniorUmOptions(country).forEach(function(o) {
+      const el = document.createElement("option");
+      el.value = o.value;
+      el.textContent = o.label + (o.fee > 0 ? "  -  " + money(o.fee, country) : "");
+      umSel.appendChild(el);
+    });
+    if (umPrev && umSel.querySelector('option[value="' + umPrev + '"]')) umSel.value = umPrev;
+  }
+}
+
+function currentJuniorPackage() {
+  return juniorPackageIndex[document.getElementById("program-type").value] || null;
+}
+
+function updateJuniorTiers() {
+  const pkg = currentJuniorPackage();
+  const sel = document.getElementById("junior-tier");
+  const prev = sel.value;
+  sel.innerHTML = "";
+  if (!pkg) return;
+  juniorTiers(pkg).forEach(function(t) {
+    const o = document.createElement("option");
+    o.value = t;
+    o.textContent = pkg.unit === "nights"
+      ? t + " nights (" + (t + 1) + " days)"
+      : t + (t === 1 ? " week" : " weeks");
+    sel.appendChild(o);
+  });
+  if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+  handleJuniorTierChange();
+}
+
+function handleJuniorTierChange() {
+  const pkg  = currentJuniorPackage();
+  const sel  = document.getElementById("junior-start");
+  const tier = parseInt(document.getElementById("junior-tier").value, 10) || 0;
+  sel.innerHTML = "";
+  if (!pkg) return;
+
+  juniorStartDates(pkg, tier).forEach(function(d) {
+    const iso = d.toISOString().slice(0, 10);
+    const end = new Date(d);
+    end.setDate(d.getDate() + (pkg.unit === "nights" ? tier : tier * 7));
+    const fmt = function(x) {
+      return x.toLocaleDateString("en-CA", { weekday:"short", day:"numeric", month:"short" });
+    };
+    const o = document.createElement("option");
+    o.value = iso;
+    o.textContent = fmt(d) + "  \u2192  " + fmt(end);
+    sel.appendChild(o);
+  });
+
+  /* keep the shared duration field in step so the rest of the calculator,
+     the quote header and the PDF all read the right number of weeks */
+  const weeks = pkg.unit === "nights" ? Math.round(tier / 7) : tier;
+  document.getElementById("duration").value = Math.max(1, weeks);
+
+  const win = new Date(pkg.start + "T00:00:00").toLocaleDateString("en-CA", { day:"numeric", month:"short" }) +
+              " to " + new Date(pkg.end + "T00:00:00").toLocaleDateString("en-CA", { day:"numeric", month:"short", year:"numeric" });
+  document.getElementById("junior-window").textContent = "(camp runs " + win + ")";
+  document.getElementById("junior-detail").innerHTML =
+    "<strong>Ages:</strong> " + pkg.ages + " &nbsp;|&nbsp; <strong>Course:</strong> " + pkg.course +
+    " &nbsp;|&nbsp; <strong>Accommodation:</strong> " + pkg.accom +
+    (pkg.room && pkg.room !== "-" ? "<br><strong>Room:</strong> " + pkg.room : "") +
+    "<br>Includes tuition, activities and excursions as per the sample programme" +
+    (pkg.accom === "Residential" || pkg.accom === "Homestay" ? ", accommodation and 3 meals per day" : "") + ".";
+}
+
 function updateCampusDropdown() {
   const country = document.getElementById("country").value;
   const cd = document.getElementById("campus");
   cd.innerHTML = "";
   if (!country) return;
+  if (isJunior()) {
+    (juniorVenues[country] || []).forEach(function(v) {
+      const o = document.createElement("option"); o.value = v.value; o.textContent = v.label;
+      cd.appendChild(o);
+    });
+    updateJuniorTransfers();
+    updateProgramTypeDropdown();
+    return;
+  }
   Object.keys(accommodationOptions[country]).forEach(function(c) {
     const o = document.createElement("option"); o.value = c; o.textContent = c; cd.appendChild(o);
   });
@@ -719,6 +1100,19 @@ function updateProgramTypeDropdown() {
   const prev    = dr.value;
   dr.innerHTML  = "";
   if (!country) return;
+
+  if (isJunior()) {
+    const venue = (juniorVenues[country] || []).filter(function(v){ return v.value === campus; })[0];
+    (venue ? venue.packages : []).forEach(function(p) {
+      const o = document.createElement("option"); o.value = p.value; o.textContent = p.label;
+      dr.appendChild(o);
+    });
+    if (prev && juniorPackageIndex[prev] && venue &&
+        venue.packages.filter(function(p){ return p.value === prev; }).length) dr.value = prev;
+    updateJuniorTransfers();
+    updateJuniorTiers();
+    return;
+  }
 
   if (isCareerCollege()) {
     const list = careerCollegePrograms[campus] || [];
@@ -925,10 +1319,78 @@ function calculateMaterialFee(country, campus, duration) {
 /* =========================================================================
    CORE CALCULATION
    ========================================================================= */
+/* Junior camps are sold as a package: one price covering tuition, activities,
+   excursions and (on residential/homestay) accommodation and meals. Only the
+   registration fee, insurance and a handful of optional supplements sit on top. */
+function calculateJunior(pkg) {
+  const country  = document.getElementById("country").value;
+  const fees     = juniorFees[country] || juniorFees.Canada;
+  const tier     = parseInt(document.getElementById("junior-tier").value, 10) || 0;
+  const startISO = document.getElementById("junior-start").value || pkg.start;
+  const optOutIns = document.getElementById("opt-out-insurance").checked;
+  const isExtension = (document.getElementById("is-extension") || {}).checked || false;
+  const discountInput = parseFloat(document.getElementById("discount").value) || 0;
+
+  const nights   = pkg.unit === "nights" ? tier : tier * 7;
+  const weeks    = pkg.unit === "nights" ? Math.round(tier / 7) : tier;
+  const packagePrice = pkg.prices[tier] || 0;
+
+  const discountAmount = Math.min(packagePrice, packagePrice * (discountInput / 100));
+  const tuitionFinal   = packagePrice - discountAmount;
+
+  const regFee = isExtension ? 0 : fees.registration;
+  const insFee = optOutIns ? 0 : nights * fees.insurancePerDay;
+
+  /* USA camps charge airport transfers per centre; Canada includes them. */
+  const tOpts   = juniorTransferOptions(country, pkg.venue);
+  const tChoice = (document.getElementById("junior-transfer") || {}).value || "none";
+  const tPick   = tOpts.filter(function(o){ return o.value === tChoice; })[0];
+  const transferFee = tPick ? tPick.fee : 0;
+
+  const umChoice = (document.getElementById("junior-um") || {}).value || "none";
+  const umPick   = juniorUmOptions(country).filter(function(o){ return o.value === umChoice; })[0];
+  const umFee    = tOpts.length && umPick ? umPick.fee : 0;
+
+  const endDate = new Date(startISO + "T00:00:00");
+  endDate.setDate(endDate.getDate() + nights);
+
+  const total = tuitionFinal + regFee + insFee + transferFee + umFee;
+
+  return {
+    prog:pkg.value, progLabel:pkg.label, school:"Junior Programmes",
+    junior:true, juniorPkg:pkg, juniorTier:tier, juniorUnit:pkg.unit,
+    juniorNights:nights, juniorStart:startISO,
+    juniorEnd:endDate.toISOString().slice(0, 10),
+    cat:"offshore", country:country, campus:pkg.venueLabel,
+    duration:Math.max(1, weeks), rate:packagePrice, chargedRate:packagePrice,
+    netRate:weeks > 0 ? tuitionFinal / weeks : tuitionFinal,
+    rateNote:"Package price for " + tier + " " + pkg.unit,
+    onshore:false, isExtension:isExtension,
+    tuitionBeforeDiscount:packagePrice, discount:discountInput,
+    discountAmount:discountAmount, discountLabel:"Discount (" + discountInput + "%)",
+    discountShort:"Discount", extraDiscountPct:0, extraDiscountAmount:0, extraDiscountNote:"",
+    tuitionFinal:tuitionFinal,
+    regFee:regFee, matTotal:0, matNote:"", accomName:pkg.accom, accomRate:0,
+    accomUnit:"week", accomWeeks:0, billedUnits:0, accomBase:0,
+    extraNights:0, extraNightFee:0, accomAppFee:0, accomDeposit:0, accomAmenities:0,
+    amenitiesUnits:0, accomMinWeeks:0, accomMaxNights:0,
+    pFee:0, hsTotal:0, hsRate:0, hsUnits:0, dietFee:0, supplementFee:0,
+    insFee:insFee, optOutIns:optOutIns, transferFee:transferFee, juniorUmFee:umFee,
+    transferType:fees.transfersIncluded
+      ? "Included (return, any local airport)"
+      : (tPick ? tPick.label : "Not included"),
+    electiveFee:0, electiveRate:0, lessonsFee:0, custodian:0, i20Fee:0,
+    changeFee:0, changeCount:0, ieltsExamFee:0,
+    studentType:"Minor", total:total
+  };
+}
+
 function calculateGeneric(prog) {
   const cat        = document.getElementById("student-category").value;
   const country    = document.getElementById("country").value;
   const campus     = document.getElementById("campus").value;
+  const jrPkg      = isJunior() ? juniorPackageIndex[prog] : null;
+  if (jrPkg) return calculateJunior(jrPkg);
   const ccProg     = isCareerCollege() ? ccIndex[prog] : null;
   const duration   = ccProg ? ccProg.weeks : (parseInt(document.getElementById("duration").value) || 0);
   const startDate  = new Date(document.getElementById("start-date").value + "T00:00:00");
@@ -1012,7 +1474,8 @@ function calculateGeneric(prog) {
     ? MINOR_SUPPLEMENT_WEEKLY_RATE * accomWeeks : 0;
 
   /* other fees */
-  const regFee = pp.skipRegistration ? 0 : registrationFees[country];
+  const isExtension = (document.getElementById("is-extension") || {}).checked || false;
+  const regFee = (pp.skipRegistration || isExtension) ? 0 : registrationFees[country];
   const mat    = calculateMaterialFee(country, campus, duration);
   const matTotal = pp.materialsOverride !== null && pp.materialsOverride !== undefined
     ? pp.materialsOverride : mat.total;
@@ -1036,6 +1499,7 @@ function calculateGeneric(prog) {
     school: isCareerCollege() ? "Career Colleges" : "English Language Schools",
     cat:cat, country:country, campus:campus,
     duration:duration, rate:pp.rate, chargedRate:pp.chargedRate, netRate:netRate,
+    isExtension:isExtension,
     rateNote:pp.rateNote, packageWeeks:pp.packageWeeks, onshore:!!pp.onshore,
     tuitionBeforeDiscount:tuitionBeforeDiscount, discount:discount, discountAmount:discountAmount,
     discountLabel:discountLabel, discountShort:discountShort,
@@ -1060,7 +1524,7 @@ function calculateGeneric(prog) {
 /* Shared quote header lines, used by screen, PDF, copy HTML and copy text */
 function quoteHeaderRows(d, extra) {
   const hsDur = d.accomWeeks;
-  const freeWeeks = parseInt(document.getElementById("free-weeks").value) || 0;
+  const freeWeeks = d.junior ? 0 : (parseInt(document.getElementById("free-weeks").value) || 0);
   const totalWeeks = parseInt(d.duration) + freeWeeks;
   
   let durationText = d.duration + " weeks";
@@ -1068,10 +1532,10 @@ function quoteHeaderRows(d, extra) {
     durationText = d.duration + " weeks + " + freeWeeks + " FREE";
   }
   
-  const rows = [
-    ["Category",          d.cat.toUpperCase()],
-    ["School",            d.school]
-  ];
+  const rows = [];
+  /* Junior has no offshore/onshore split - the category selector is hidden for it */
+  if (!d.junior) rows.push(["Category", d.cat.toUpperCase()]);
+  rows.push(["School", d.school]);
   if (extra && extra.programsCompared) rows.push(["Programmes compared", extra.programsCompared]);
   else rows.push(["Programme", d.progLabel]);
   rows.push(
@@ -1081,13 +1545,32 @@ function quoteHeaderRows(d, extra) {
   if (freeWeeks > 0) {
     rows.push(["Total weeks", totalWeeks + " weeks (including " + freeWeeks + " promotional)"]);
   }
-  rows.push(
-    ["Accommodation",     d.accomName + (hsDur > 0 ? " (" + hsDur + " wks)" : "")],
-    ["Airport transfer",  d.transferType],
-    ["Medical insurance", d.optOutIns ? "Opted out" : "Included"],
-    ["Student type",      d.studentType + (d.supplementFee > 0 ? " (minor supplement applies)" : "")],
-    ["Start date",        document.getElementById("start-date").value]
-  );
+  if (d.junior) {
+    /* accommodation, meals and transfers are inside the package price, and the
+       camp dates come from the junior block below, so those rows are dropped */
+    rows.push(["Included", "Tuition, activities and excursions" +
+      (d.accomName === "Residential" || d.accomName === "Homestay" ? ", accommodation and 3 meals per day" : "")]);
+    rows.push(["Airport transfer",  d.transferType]);
+    rows.push(["Medical insurance", d.optOutIns ? "Opted out" : "Included"]);
+  } else {
+    rows.push(
+      ["Accommodation",     d.accomName + (hsDur > 0 ? " (" + hsDur + " wks)" : "")],
+      ["Airport transfer",  d.transferType],
+      ["Medical insurance", d.optOutIns ? "Opted out" : "Included"],
+      ["Student type",      d.studentType + (d.supplementFee > 0 ? " (minor supplement applies)" : "")],
+      ["Start date",        document.getElementById("start-date").value]
+    );
+  }
+  if (d.isExtension) rows.push(["Quote type", "Course extension (enrolment fee waived)"]);
+  if (d.junior && d.juniorPkg) {
+    const fmt = function(iso) {
+      return new Date(iso + "T00:00:00").toLocaleDateString("en-CA", { day:"numeric", month:"long", year:"numeric" });
+    };
+    rows.push(["Camp dates", fmt(d.juniorStart) + " to " + fmt(d.juniorEnd)]);
+    rows.push(["Stay length", d.juniorTier + " " + d.juniorUnit]);
+    rows.push(["Ages", d.juniorPkg.ages]);
+    if (d.juniorPkg.room && d.juniorPkg.room !== "-") rows.push(["Room type", d.juniorPkg.room]);
+  }
   return rows;
 }
 
@@ -1099,8 +1582,12 @@ function buildFeeRows(d) {
   }
   const isSchol = d.discountShort === "Scholarship";
   const word    = isSchol ? "scholarship" : "discount";
-  add("Tuition (" + (d.onshore ? "regular rate" : "before " + word) + ")",
-      d.tuitionBeforeDiscount, d.rateNote);
+  if (d.junior) {
+    add("Programme package", d.tuitionBeforeDiscount, d.rateNote);
+  } else {
+    add("Tuition (" + (d.onshore ? "regular rate" : "before " + word) + ")",
+        d.tuitionBeforeDiscount, d.rateNote);
+  }
   if (d.discountAmount > 0) {
     add(d.discountLabel, d.discountAmount,
         isSchol ? "Flat award, " + fmtPct(d.discount) + "% of tuition"
@@ -1116,8 +1603,10 @@ function buildFeeRows(d) {
     add("Tuition (after discounts)", d.tuitionFinal,
         money(d.netRate, d.country) + "/wk net");
   }
-  if (d.regFee > 0) add("Registration / enrolment", d.regFee, "Flat");
-  add("Course materials", d.matTotal, d.matNote);
+  if (d.regFee > 0) add("Registration / enrolment", d.regFee, d.junior ? "Registration for individuals" : "Flat");
+  else if (d.isExtension) add("Registration / enrolment", 0, "Waived - course extension");
+  /* Junior packages include course materials in the package price */
+  if (!d.junior) add("Course materials", d.matTotal, d.matNote);
   if (d.accomBase > 0) {
     let aNote = money(d.accomRate, d.country) + "/" + d.accomUnit + " x " + d.billedUnits + " " + d.accomUnit + (d.billedUnits === 1 ? "" : "s");
     if (d.accomDeposit > 0) aNote += "; refundable security deposit " + money(d.accomDeposit, d.country) + " (not in total)";
@@ -1133,8 +1622,11 @@ function buildFeeRows(d) {
   if (d.hsTotal > 0) add("High season surcharge", d.hsTotal, money(d.hsRate, d.country) + " x " + d.hsUnits + " " + d.accomUnit + (d.hsUnits === 1 ? "" : "s"));
   if (d.dietFee > 0) add("Special diet supplement", d.dietFee, money(specialDietWeekly, d.country) + "/wk x " + d.accomWeeks + " wks");
   if (d.supplementFee > 0) add("Minor homestay supplement", d.supplementFee, money(MINOR_SUPPLEMENT_WEEKLY_RATE, d.country) + "/wk x " + d.accomWeeks + " wks");
-  add("Medical insurance", d.insFee, d.optOutIns ? "Opted out" : money(insuranceRates[d.country], d.country) + "/day x " + (d.duration * 7) + " days");
+  const insDays  = d.junior ? d.juniorNights : d.duration * 7;
+  const insRate  = d.junior ? (juniorFees[d.country] || juniorFees.Canada).insurancePerDay : insuranceRates[d.country];
+  add("Medical insurance", d.insFee, d.optOutIns ? "Opted out" : money(insRate, d.country) + "/day x " + insDays + " days");
   if (d.transferFee > 0) add("Airport transfer", d.transferFee, d.transferType);
+  if (d.juniorUmFee > 0) add("Unaccompanied minor fee", d.juniorUmFee, "Airport handling");
   if (d.electiveFee > 0) add("Specialised elective add-on", d.electiveFee, money(d.electiveRate, d.country) + "/wk x " + d.duration + " wks");
   if (d.lessonsFee > 0) add("Private / semi-private lessons", d.lessonsFee, "Package");
   if (d.custodianFee > 0) add("Custodianship", d.custodianFee, "Flat");
@@ -1206,6 +1698,7 @@ const comparisonRows = [
   { label:"Minor supplement",          key:"supplementFee" },
   { label:"Insurance",                 key:"insFee" },
   { label:"Transfer",                  key:"transferFee" },
+  { label:"Unaccompanied minor",       key:"juniorUmFee" },
   { label:"Elective add-on",           key:"electiveFee" },
   { label:"Private lessons",           key:"lessonsFee" },
   { label:"Custodianship",             key:"custodianFee" },
@@ -1220,11 +1713,16 @@ function compCell(row, val, country) {
 }
 
 function activeComparisonRows(results) {
-  const always = ["duration","tuitionBeforeDiscount","tuitionFinal","regFee","matTotal","insFee"];
+  const junior = results.length && results[0].data.junior;
+  /* materials are inside the junior package price, so that row is dropped */
+  const always = junior
+    ? ["duration","tuitionBeforeDiscount","tuitionFinal","regFee","insFee"]
+    : ["duration","tuitionBeforeDiscount","tuitionFinal","regFee","matTotal","insFee"];
   const kind = results.length ? results[0].data.discountShort : "Discount";
   const scholarship = kind === "Scholarship";
   const onshore     = kind === "Onshore discount";
   return comparisonRows.filter(function(row) {
+    if (junior && row.key === "matTotal") return false;
     if (always.indexOf(row.key) !== -1) return true;
     return results.some(function(r){ return r.data[row.key] > 0; });
   }).map(function(row) {
@@ -1232,6 +1730,9 @@ function activeComparisonRows(results) {
       if (row.key === "discountAmount")        return Object.assign({}, row, { label:"Scholarship" });
       if (row.key === "tuitionBeforeDiscount") return Object.assign({}, row, { label:"Tuition (before schol.)" });
       if (row.key === "tuitionFinal")          return Object.assign({}, row, { label:"Tuition (after schol.)" });
+    } else if (junior) {
+      if (row.key === "tuitionBeforeDiscount") return Object.assign({}, row, { label:"Programme package" });
+      if (row.key === "tuitionFinal")          return Object.assign({}, row, { label:"Package after discount" });
     } else if (onshore) {
       if (row.key === "discountAmount")        return Object.assign({}, row, { label:"Onshore discount" });
       if (row.key === "tuitionBeforeDiscount") return Object.assign({}, row, { label:"Tuition (regular rate)" });
@@ -1245,6 +1746,14 @@ function comparisonProgramList() {
   const country = document.getElementById("country").value;
   const cat     = document.getElementById("student-category").value;
 
+  if (isJunior()) {
+    const campus = document.getElementById("campus").value;
+    const venue  = (juniorVenues[country] || []).filter(function(v){ return v.value === campus; })[0];
+    const tier   = parseInt(document.getElementById("junior-tier").value, 10) || 0;
+    /* only compare packages that actually offer the selected stay length */
+    const list = (venue ? venue.packages : []).filter(function(p){ return p.prices[tier] !== undefined; });
+    return list.slice(0, 3).map(function(p){ return p.value; });
+  }
   if (isCareerCollege()) {
     const campus = document.getElementById("campus").value;
     const list   = (careerCollegePrograms[campus] || []).slice(0, 3);
@@ -1265,7 +1774,7 @@ function comparisonProgramList() {
 function calculateComparison() {
   const results = comparisonProgramList().map(function(p) {
     const d = calculateGeneric(p);
-    return { name:(ccIndex[p] ? ccIndex[p].label : p), data:d };
+    return { name:(juniorPackageIndex[p] ? juniorPackageIndex[p].label : (ccIndex[p] ? ccIndex[p].label : p)), data:d };
   });
   lastCompResults = results;
   lastCompNet  = null;
@@ -1818,6 +2327,7 @@ function clearForm() {
   document.getElementById("commission").value        = 30;
   document.getElementById("enrolment-fee").value     = registrationFees[country];
   document.getElementById("opt-out-insurance").checked = false;
+  document.getElementById("is-extension").checked = false;
   document.getElementById("student-type").value      = "Adult";
   document.getElementById("extra-nights").value      = 0;
   document.getElementById("elective-addon").value    = 0;
@@ -1828,6 +2338,7 @@ function clearForm() {
   document.getElementById("special-diet").checked    = false;
   document.getElementById("i20-fee").checked         = false;
   if (isCareerCollege()) syncCareerCollegeDuration();
+  if (isJunior()) updateJuniorTiers();
   document.getElementById("total-price").style.display    = "none";
   document.getElementById("action-buttons").style.display = "none";
   document.getElementById("agent-section").style.display  = "none";
@@ -1848,6 +2359,184 @@ function updateSchedule() {
   showSchedule();
 }
 
+/* Afternoon slot occupancy for each Intensive 30 elective track, read off the
+   published A/B and C/D timetables. Days are Mon-Fri (0-4). This lets any
+   combination of tracks be drawn, rather than only the two published pairs. */
+const ELECTIVE_SLOTS = {
+  A: { "12:45-13:30":[0,4], "13:30-14:15":[0,4], "14:20-15:05":[1,2] },
+  B: { "12:45-13:30":[1,3], "13:30-14:15":[1,3] },
+  C: { "12:45-13:30":[2],   "13:30-14:15":[2],   "14:20-15:05":[0,3,4], "15:10-15:55":[0] },
+  D: { "15:10-15:55":[1,3], "15:55-16:40":[1,3] }
+};
+
+/* Campus-wide afternoon activities that sit alongside the elective tracks on
+   the master timetable. Not electives, so they are never counted as lessons.
+   Each is toggled independently, so a quote can show one, both or neither. */
+const PM_SOCIAL = { "15:10-15:55":[2, 4] };              /* Wed and Fri */
+const PM_STUDY  = { "15:10-15:55":[4], "15:55-16:40":[2] }; /* Fri, then Wed */
+const PM_PATHWAYS = { "15:10-15:55":[2] };               /* Wed, alongside social */
+const PM_ACTIVITY_WEDNESDAY_EXTRA = "Pathways Class**";
+
+function showSocialProgramme() {
+  const el = document.getElementById("show-social");
+  return el ? el.checked : true;
+}
+function showStudyClub() {
+  const el = document.getElementById("show-study-club");
+  return el ? el.checked : true;
+}
+
+/* Which activity labels belong in a given day/slot, given the toggles. */
+function activityLabels(slot, day) {
+  const out = [];
+  if (showSocialProgramme() && (PM_SOCIAL[slot] || []).indexOf(day) !== -1) {
+    out.push("Afternoon Social Programme*");
+  }
+  if (showStudyClub() && (PM_STUDY[slot] || []).indexOf(day) !== -1) {
+    out.push("Study Club");
+  }
+  return out;
+}
+const ELECTIVE_COLOURS = {
+  A: { bg:"#b3e5fc", fg:"#0d3c55" },
+  B: { bg:"#ffcc99", fg:"#6b3a00" },
+  C: { bg:"#a8d5e8", fg:"#0d3c55" },
+  D: { bg:"#ffdd99", fg:"#6b4a00" }
+};
+const PM_SLOT_ORDER = ["12:45-13:30", "13:30-14:15", "14:20-15:05", "15:10-15:55", "15:55-16:40"];
+const PM_BREAK_BEFORE = { "14:20-15:05":"14:15-14:20", "15:10-15:55":"15:05-15:10" };
+
+function selectedElectives() {
+  const out = [];
+  document.querySelectorAll(".elective-check").forEach(function(el) {
+    if (el.checked) out.push(el.value);
+  });
+  return out;
+}
+
+/* Returns [{day, slot, tracks:[...]}] for any slot claimed by two tracks at once. */
+function electiveClashes(tracks) {
+  const clashes = [];
+  PM_SLOT_ORDER.forEach(function(slot) {
+    for (let day = 0; day < 5; day++) {
+      const here = tracks.filter(function(t) {
+        return (ELECTIVE_SLOTS[t][slot] || []).indexOf(day) !== -1;
+      });
+      if (here.length > 1) clashes.push({ day:day, slot:slot, tracks:here });
+    }
+  });
+  return clashes;
+}
+
+function buildIntensive30Schedule(tracks) {
+  const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"];
+  const cell = function(style, text) {
+    return '<td style="padding:8px; border:1px solid #ddd; text-align:center; ' + style + '">' + text + '</td>';
+  };
+  const core = function(label) {
+    return cell("background:#2c1a70; color:#FFB84D; font-weight:bold;", label);
+  };
+  const breakRow = function(time, label) {
+    return '<tr><td style="padding:8px; border:1px solid #ddd; font-weight:bold; background:#f9f9f9; font-size:10px;">' + time + '</td>' +
+           '<td colspan="5" style="padding:8px; border:1px solid #ddd; text-align:center; background:#f0f0f0; color:#555;">' + label + '</td></tr>';
+  };
+  const timeCell = function(t) {
+    return '<td style="padding:8px; border:1px solid #ddd; font-weight:bold; background:#f9f9f9; font-size:10px;">' + t + '</td>';
+  };
+
+  let html = '<div style="margin-bottom:15px;"><strong style="font-size:14px; color:#0077cc;">Intensive 30 - Weekly Schedule</strong>' +
+             (tracks.length ? ' <span style="font-size:12px; color:#666;">(Elective ' + tracks.join(" + ") + ')</span>' : '') +
+             '</div><table style="width:100%; border-collapse:collapse; font-size:11px;">';
+
+  html += '<tr style="background:#2c1a70; color:white;">' +
+          '<td style="width:14%; text-align:center; font-weight:bold; padding:8px; border:1px solid #2c1a70;">TIME</td>';
+  DAYS.forEach(function(d) {
+    html += '<td style="text-align:center; font-weight:bold; padding:8px;">' + d + '</td>';
+  });
+  html += '</tr>';
+
+  /* morning core - identical across every elective combination */
+  ["08:45-09:30","09:30-10:15"].forEach(function(t, idx) {
+    html += '<tr>' + timeCell(t);
+    for (let d = 0; d < 5; d++) {
+      html += core(idx === 0 && d === 0 ? "AM Core Class / New Student Orientation" : "AM Core Class");
+    }
+    html += '</tr>';
+  });
+  html += breakRow("10:15-10:30", "\u2713 Break");
+  ["10:30-11:15","11:15-12:00"].forEach(function(t) {
+    html += '<tr>' + timeCell(t);
+    for (let d = 0; d < 5; d++) html += core("AM Core Class");
+    html += '</tr>';
+  });
+  html += breakRow("12:00-12:45", "\u2713 Lunch");
+
+  /* afternoon - only slots actually used by the chosen tracks are drawn */
+  const usedSlots = PM_SLOT_ORDER.filter(function(slot) {
+    if (tracks.some(function(t){ return (ELECTIVE_SLOTS[t][slot] || []).length; })) return true;
+    /* keep a slot visible if a ticked activity runs in it */
+    for (let d = 0; d < 5; d++) if (activityLabels(slot, d).length) return true;
+    return false;
+  });
+
+  let hasSocial = false, hasStudy = false;
+  usedSlots.forEach(function(s) {
+    for (let d = 0; d < 5; d++) {
+      activityLabels(s, d).forEach(function(a) {
+        if (a.indexOf("Social") !== -1) hasSocial = true; else hasStudy = true;
+      });
+    }
+  });
+
+  usedSlots.forEach(function(slot) {
+    const pre = PM_BREAK_BEFORE[slot];
+    if (pre && usedSlots.indexOf(slot) > 0) html += breakRow(pre, "\u2713 Break");
+    html += '<tr>' + timeCell(slot);
+    for (let d = 0; d < 5; d++) {
+      const here = tracks.filter(function(t) {
+        return (ELECTIVE_SLOTS[t][slot] || []).indexOf(d) !== -1;
+      });
+      const acts = here.length === 0 ? activityLabels(slot, d) : [];
+      if (acts.length) {
+        const isSocial = acts.some(function(a){ return a.indexOf("Social") !== -1; });
+        const pathways = showSocialProgramme() && (PM_PATHWAYS[slot] || []).indexOf(d) !== -1;
+        html += cell(isSocial ? "background:#ff6b6b; color:#ffffff; font-weight:bold; font-size:10px;"
+                              : "background:#fff9c4; color:#5a4a00; font-weight:bold; font-size:10px;",
+                     acts.join(" / ") + (pathways ? "<br>" + PM_ACTIVITY_WEDNESDAY_EXTRA : ""));
+      } else if (here.length === 0) {
+        html += cell("background:#f0f0f0; color:#555;", "\u2713 Break");
+      } else if (here.length === 1) {
+        const col = ELECTIVE_COLOURS[here[0]];
+        html += cell("background:" + col.bg + "; color:" + col.fg + "; font-weight:bold;", "PM Elective " + here[0]);
+      } else {
+        html += cell("background:#ffd6d6; color:#a01818; font-weight:bold;",
+                     "Clash: " + here.join(" / "));
+      }
+    }
+    html += '</tr>';
+  });
+
+  const pmLessons = usedSlots.reduce(function(sum, slot) {
+    let n = 0;
+    for (let d = 0; d < 5; d++) {
+      if (tracks.some(function(t){ return (ELECTIVE_SLOTS[t][slot] || []).indexOf(d) !== -1; })) n++;
+    }
+    return sum + n;
+  }, 0);
+
+  html += '<tr><td colspan="6" style="padding:8px; border:1px solid #ddd; text-align:center; background:#fafafa; font-weight:bold; color:#2c1a70;">' +
+          'Total: 20 morning lessons + ' + pmLessons + ' afternoon elective lessons = ' + (20 + pmLessons) + ' lessons/week</td></tr>';
+  html += '</table>';
+  if (hasSocial || hasStudy) {
+    html += '<div style="margin-top:6px; font-size:10px; color:#777;">';
+    if (hasSocial) html += '* Afternoon Social Programme varies by campus.<br>' +
+                           '** Pathways Class runs for students on a pathway programme.<br>';
+    if (hasStudy)  html += 'Study Club is optional supervised study.';
+    html += '</div>';
+  }
+  return html;
+}
+
 function showSchedule() {
   const prog = document.getElementById("program-type").value;
   const display = document.getElementById("schedule-display");
@@ -1855,19 +2544,25 @@ function showSchedule() {
   const content = document.getElementById("schedule-content");
   
   // Show elective selector for Semi Intensive 26 and Intensive 30 only
+  const radios  = document.getElementById("elective-radios");
+  const checks  = document.getElementById("elective-checks");
+  const warning = document.getElementById("elective-warning");
   if (prog === "Semi Intensive 26" || prog === "Intensive 30") {
     electiveSelector.style.display = "block";
     const label = document.getElementById("elective-label");
-    const optALabel = document.getElementById("opt-a-label");
-    const optCLabel = document.getElementById("opt-c-label");
     if (prog === "Semi Intensive 26") {
-      label.textContent = "Elective track option";
-      optALabel.textContent = "Option A (Elective A)";
-      optCLabel.textContent = "Option C (Elective C)";
-    } else if (prog === "Intensive 30") {
-      label.textContent = "Elective track option";
-      optALabel.textContent = "Option A/B (Electives A & B)";
-      optCLabel.textContent = "Option C/D (Electives C & D)";
+      label.textContent = "Elective track - one track, A by default";
+      radios.style.display = "grid";
+      checks.style.display = "none";
+      warning.style.display = "none";
+      const toggles = document.getElementById("activity-toggles");
+      if (toggles) toggles.style.display = "none";
+    } else {
+      label.textContent = "Elective tracks - tick any combination (A and B by default)";
+      radios.style.display = "none";
+      checks.style.display = "grid";
+      const toggles = document.getElementById("activity-toggles");
+      if (toggles) toggles.style.display = "block";
     }
   } else {
     electiveSelector.style.display = "none";
@@ -2381,13 +3076,34 @@ function showSchedule() {
   let scheduleKey = prog;
   if (prog === "Semi Intensive 26" || prog === "Intensive 30") {
     const selectedElective = document.querySelector('input[name="elective-option"]:checked');
-    if (selectedElective) {
-      if (prog === "Semi Intensive 26") {
-        scheduleKey = "Semi Intensive 26 " + selectedElective.value;
-      } else if (prog === "Intensive 30") {
-        scheduleKey = "Intensive 30 " + selectedElective.value + "B"; // AB or CD
-      }
+    if (prog === "Semi Intensive 26" && selectedElective) {
+      scheduleKey = "Semi Intensive 26 " + selectedElective.value;
     }
+  }
+
+  /* Intensive 30 is drawn from the elective slot map so any mix of A-D works,
+     rather than being limited to the two published pairings. */
+  if (prog === "Intensive 30") {
+    const tracks = selectedElectives();
+    if (!tracks.length) {
+      content.innerHTML = '<div style="padding:12px; color:#c0392b;">Select at least one elective track to see the schedule.</div>';
+      warning.style.display = "none";
+      display.style.display = "block";
+      return;
+    }
+    content.innerHTML = buildIntensive30Schedule(tracks);
+    const clashes = electiveClashes(tracks);
+    if (clashes.length) {
+      const DAY = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+      warning.innerHTML = "<strong>Timetable clash:</strong> " + clashes.map(function(cl) {
+        return "Elective " + cl.tracks.join(" and ") + " both run " + DAY[cl.day] + " " + cl.slot;
+      }).join("; ") + ". The student cannot attend both - the published pairings are A+B or C+D.";
+      warning.style.display = "block";
+    } else {
+      warning.style.display = "none";
+    }
+    display.style.display = "block";
+    return;
   }
 
   if (scheduleHTML[scheduleKey]) {
@@ -2400,6 +3116,7 @@ function showSchedule() {
 
 function handleProgramChange() {
   if (isCareerCollege()) syncCareerCollegeDuration();
+  if (isJunior()) updateJuniorTiers();
   showProgramNote();
   showSchedule();
 }
@@ -2550,6 +3267,139 @@ function lessonHoursData(country) {
   return out;
 }
 
+/* Campus-specific media links and payment instructions used in the template
+   email. Only campuses with supplied content appear; anything missing simply
+   omits that section rather than printing an empty heading. */
+const campusExtras = {
+  "Vancouver": {
+    media: [
+      { label:"Study English in Vancouver, Canada | Oxford International Vancouver",
+        url:"https://www.youtube.com/watch?v=r1TF1hGNX8s" },
+      { label:"Find us on Google Maps", url:"https://maps.app.goo.gl/zo6nT1sfYgceRHDW8" }
+    ],
+    payment: [
+      "Cash or debit card in person at the school.",
+      "Credit card (Visa or Mastercard) either in person or via credit card authorization form. Note that credit card payments are subject to a 3% surcharge.",
+      "Cheque payable to: Vancouver Maple Leaf Language College",
+      "Online payment through Flywire: http://oxtintvancouver.flywire.com/ - if this link is not working, go to www.flywire.com, select \u201CMake a Payment\u201D (top left), and type \u2018Oxford International English School Vancouver\u2019.",
+      "Wire transfer using the details below. Please send a copy of the transfer documents to our registrar and specify the student\u2019s name and student number. Canadian banks do not use IBAN numbers.",
+      "E-Transfer from inside Canada to canada@oxfordinternational.com"
+    ],
+    bank: [
+      ["Bank", "CIBC - Canadian Imperial Bank of Commerce"],
+      ["Bank address", "400 Burrard Street, Vancouver BC, V6C 3A6"],
+      ["Bank #", "010"],
+      ["Transit #", "00010"],
+      ["Account name", "Vancouver Maple Leaf Language College"],
+      ["Account #", "93-05513"],
+      ["Account address", "250 - 815 West Hastings Street, Vancouver BC, V6C 1B4"],
+      ["Swift code", "CIBCCATT"],
+      ["ABA #", "026009593"],
+      ["BIC #", "cc001000010"]
+    ]
+  },
+  "Toronto": {
+    media: [
+      { label:"Let me give you a school tour", url:"https://youtu.be/ZarNjQRKupU?si=M9MMn5VocAn5a3TE" },
+      { label:"Life as a student at Oxford International Toronto", url:"https://youtu.be/rgkB4tJRZfM?si=YsT7Fd94ck5GvHKa" },
+      { label:"Find us on Google Maps", url:"https://maps.app.goo.gl/ZGs3DyVNYd6YcdGA9" }
+    ],
+    payment: [
+      "Cash or debit card in person at the school. Note that international debit card payments are subject to a 3% surcharge.",
+      "Credit card (Visa or Mastercard) either in person or via credit card authorization form. Note that credit card payments are subject to a 3% surcharge.",
+      "Cheque payable to: Vancouver Maple Leaf Language College",
+      "Online payment through Flywire: http://oxintenglishtoronto.flywire.com/ - if this link is not working, go to www.flywire.com, select \u201CMake a Payment\u201D (top left), and type \u2018Oxford International English School Toronto\u2019.",
+      "Wire transfer using the details below. Please send a copy of the transfer documents to our registrar and specify the student\u2019s name and student number. Canadian banks do not use IBAN numbers.",
+      "E-Transfer from inside Canada to canada@oxfordinternational.com"
+    ],
+    bank: [
+      ["Bank", "CIBC - Canadian Imperial Bank of Commerce"],
+      ["Bank address", "400 Burrard Street, Vancouver BC, V6C 3A6"],
+      ["Bank #", "010"],
+      ["Transit #", "00010"],
+      ["Account name", "Vancouver Maple Leaf Language College"],
+      ["Account #", "93-05513"],
+      ["Account address", "250 - 815 West Hastings Street, Vancouver BC, V6C 1B4"],
+      ["Swift code", "CIBCCATT"],
+      ["ABA #", "026009593"],
+      ["BIC #", "cc001000010"]
+    ]
+  },
+  "Halifax": {
+    media: [
+      { label:"OICC Halifax Campus Tour | Study in Halifax - Canada",
+        url:"https://www.youtube.com/watch?v=M9zQmU7_v0c" },
+      { label:"Find us on Google Maps", url:"https://share.google/jJAMzPw1ySgoRtx4L" }
+    ],
+    payment: [
+      "Cash or debit card in person at the school. Note that international debit card payments are subject to a 3% surcharge.",
+      "E-transfer from a Canadian bank account. Please send to eclcetransfers@oxfordinternational.com and use the security answer/password \u2018eastcoast\u2019.",
+      "Credit card (Visa or MasterCard) either in person or via credit card authorization form. Note that credit card payments are subject to a 3% surcharge.",
+      "Online payment through Flywire: eclc.flywire.com - if this link is not working, go to www.flywire.com, select \u2018Make a Payment\u2019 (top left), and type \u2018Oxford International English Schools - Halifax\u2019.",
+      "Cheque payable to: East Coast Language College",
+      "Wire transfer using the details below. Ensure that bank fees are included on your invoice. Please send a copy of the transfer documents to our Admissions Manager and specify the student\u2019s name and student number. Canadian banks do not use IBAN numbers."
+    ],
+    bank: [
+      ["Bank", "TD - TD Canada Trust"],
+      ["Bank address", "5495 Spring Garden Rd. Halifax, NS, B3J 1J1"],
+      ["Bank #", "004"],
+      ["Transit #", "49593"],
+      ["Account name", "East Coast Language College"],
+      ["Account #", "4959-0310191"],
+      ["Account address", "1256 Barrington St. Halifax, NS, B3J 1Y6"],
+      ["Swift code", "TDOMCATTTOR"]
+    ]
+  }
+};
+
+function campusExtrasHTML(campus) {
+  const x = campusExtras[campus];
+  if (!x) return "";
+  let out = "";
+  if (x.media && x.media.length) {
+    out += '<h3 style="margin:15px 0 10px 0; color:#333;">See the School</h3><ul style="margin:8px 0; padding-left:20px;">';
+    x.media.forEach(function(m) {
+      out += '<li style="margin-bottom:4px;"><a href="' + m.url + '" target="_blank">' + m.label + '</a></li>';
+    });
+    out += '</ul>';
+  }
+  if (x.payment && x.payment.length) {
+    out += '<h3 style="margin:15px 0 10px 0; color:#333;">How to Pay</h3>' +
+           '<p style="margin:6px 0;">Payment may be made by:</p><ol style="margin:8px 0; padding-left:20px;">';
+    x.payment.forEach(function(p) { out += '<li style="margin-bottom:4px;">' + p + '</li>'; });
+    out += '</ol>';
+  }
+  if (x.bank && x.bank.length) {
+    out += '<p style="margin:10px 0 4px 0;"><strong>Bank details</strong></p>' +
+           '<table bgcolor="#f5f5f5" style="background-color:#f5f5f5; border-collapse:collapse; font-size:12px; margin:4px 0;">';
+    x.bank.forEach(function(row) {
+      out += '<tr><td style="padding:3px 12px 3px 8px; color:#666; white-space:nowrap;">' + row[0] + '</td>' +
+             '<td style="padding:3px 8px; color:#333;"><strong>' + row[1] + '</strong></td></tr>';
+    });
+    out += '</table>';
+  }
+  return out;
+}
+
+function campusExtrasText(campus) {
+  const x = campusExtras[campus];
+  if (!x) return "";
+  let out = "";
+  if (x.media && x.media.length) {
+    out += "\nSEE THE SCHOOL\n";
+    x.media.forEach(function(m) { out += "  " + m.label + ": " + m.url + "\n"; });
+  }
+  if (x.payment && x.payment.length) {
+    out += "\nHOW TO PAY\nPayment may be made by:\n";
+    x.payment.forEach(function(p, i) { out += "  " + (i + 1) + ". " + p + "\n"; });
+  }
+  if (x.bank && x.bank.length) {
+    out += "\nBank details\n";
+    x.bank.forEach(function(row) { out += "  " + (row[0] + ":").padEnd(18) + row[1] + "\n"; });
+  }
+  return out;
+}
+
 function getRepDetails() {
   var n = (document.getElementById("rep-name") || {}).value || "";
   var t = (document.getElementById("rep-title") || {}).value || "";
@@ -2586,6 +3436,14 @@ function showTemplateEmail() {
   
   const info = campusInfo[campus] || campusInfo["Toronto"];
   const rep = getRepDetails();
+  const extrasHTML = campusExtrasHTML(campus);
+  const mediaEnd   = extrasHTML.indexOf('<h3 style="margin:15px 0 10px 0; color:#333;">How to Pay</h3>');
+  const campusMediaBlock = mediaEnd === -1 ? extrasHTML : extrasHTML.slice(0, mediaEnd);
+  const campusPayBlock   = mediaEnd === -1 ? ""         : extrasHTML.slice(mediaEnd);
+  const extrasText  = campusExtrasText(campus);
+  const payTextAt   = extrasText.indexOf("\nHOW TO PAY\n");
+  const campusMediaText = payTextAt === -1 ? extrasText : extrasText.slice(0, payTextAt);
+  const campusPayText   = payTextAt === -1 ? ""         : extrasText.slice(payTextAt) + "\n";
   const lessonMins = country === "USA" ? 50 : 45;
   const lessonNote = country === "USA"
     ? "At our New York campus each lesson is 50 minutes long."
@@ -2748,6 +3606,8 @@ function showTemplateEmail() {
       
       ${scheduleSection}
       
+      ${campusMediaBlock}
+
       <h3 style="margin:15px 0 10px 0; color:#333;">How to Enroll - 7 Easy Steps</h3>
       <ol style="margin:10px 0; padding-left:20px;">
         <li>Fill out the <a href="https://forms.iqschools.net/oieg/Application" target="_blank">Application form</a> and read our <a href="https://www.oxfordinternationalenglish.com/useful-information/school-policies/" target="_blank">School Policies</a></li>
@@ -2759,6 +3619,8 @@ function showTemplateEmail() {
         <li>Your welcome letter will be sent the Wednesday before your starting date</li>
       </ol>
       
+      ${campusPayBlock}
+
       <p style="margin:15px 0 10px 0;"><strong>Questions?</strong><br>
       We're here to help. Reply to this email or contact us at ${rep.email}</p>
       
@@ -2806,6 +3668,14 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
   
   const info = campusInfo[campus] || campusInfo["Toronto"];
   const rep = getRepDetails();
+  const extrasHTML = campusExtrasHTML(campus);
+  const mediaEnd   = extrasHTML.indexOf('<h3 style="margin:15px 0 10px 0; color:#333;">How to Pay</h3>');
+  const campusMediaBlock = mediaEnd === -1 ? extrasHTML : extrasHTML.slice(0, mediaEnd);
+  const campusPayBlock   = mediaEnd === -1 ? ""         : extrasHTML.slice(mediaEnd);
+  const extrasText  = campusExtrasText(campus);
+  const payTextAt   = extrasText.indexOf("\nHOW TO PAY\n");
+  const campusMediaText = payTextAt === -1 ? extrasText : extrasText.slice(0, payTextAt);
+  const campusPayText   = payTextAt === -1 ? ""         : extrasText.slice(payTextAt) + "\n";
   const lessonMins = country === "USA" ? 50 : 45;
   const lessonNote = country === "USA"
     ? "At our New York campus each lesson is 50 minutes long."
@@ -2911,6 +3781,7 @@ ${info.address}
 
 ${quotationText}
 
+${campusMediaText}
 HOW TO ENROLL - 7 EASY STEPS
 
 1. Fill out the Application form (https://forms.iqschools.net/oieg/Application) and read our School Policies (https://www.oxfordinternationalenglish.com/useful-information/school-policies/)
@@ -2927,6 +3798,7 @@ HOW TO ENROLL - 7 EASY STEPS
 
 7. Your welcome letter will be sent the Wednesday before your starting date
 
+${campusPayText}
 QUESTIONS?
 
 We're here to help. Reply to this email or contact us at ${rep.email}
