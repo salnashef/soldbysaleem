@@ -314,20 +314,6 @@
   <label>Email</label>
   <input type="email" id="rep-email" placeholder="LanguageAdmissions@oxfordinternational.com (default)" value="">
 
-  <details style="margin-top:8px;">
-    <summary style="font-size:12px; color:#555; cursor:pointer;">Hosted image URLs (for HubSpot)</summary>
-    <div style="font-size:11px; color:#777; margin:6px 0 8px 0;">
-      HubSpot strips embedded images on paste. Upload the three graphics to the HubSpot
-      file manager once, then paste their public URLs here so the HubSpot copy links to
-      them instead. Leave blank to send a text-only version.
-    </div>
-    <label>Learning philosophy image URL</label>
-    <input type="text" id="img-url-philosophy" placeholder="https://..." value="">
-    <label>Curriculum image URL</label>
-    <input type="text" id="img-url-curriculum" placeholder="https://..." value="">
-    <label>Progress chart image URL</label>
-    <input type="text" id="img-url-progress" placeholder="https://..." value="">
-  </details>
 </div>
 
 <div class="btn-grid-2" style="margin-top:15px;">
@@ -3851,39 +3837,17 @@ Oxford International English Schools - ${campus}`;
    so email clients paste the formatted version and plain-text clients still work. */
 /* HubSpot's editor sanitises pasted HTML: it discards base64 data URIs
    entirely, drops declarations carrying !important, and applies its own styles
-   to table cells. This builds a version tuned for that: hosted image URLs (or
-   text in their place), no !important, and bgcolor mirrored onto every filled
-   cell so the shading survives. */
-const HUBSPOT_IMAGE_FALLBACKS = [
-  "<strong>Production, Reception and Mediation</strong> - our three pillars. Students learn to speak and communicate in any context, to receive and comprehend language and take meaningful action, and to hold back-and-forth conversations where they produce, understand and respond.",
-  "<strong>English for the Students of Tomorrow</strong> covers global topics, cultural perspectives and scaffolded language development. <strong>SPARK Interactive Learning</strong> adds media-rich content, an interactive eBook and integrated assessment. Students keep access to SPARK materials after they graduate.",
-  "<strong>Ten OI levels</strong> map to CEFR A1-C2 and to IELTS, TOEFL iBT, Cambridge, TOEIC and Oxford ELLT. Beginner A1 is Level 1; Proficiency C2 is Level 10. Most levels take 8-18 weeks at 20+ hours of lessons per week."
-];
-
-function hostedImageURLs() {
-  const get = function(id) {
-    const el = document.getElementById(id);
-    return el && el.value ? el.value.trim() : "";
-  };
-  return [get("img-url-philosophy"), get("img-url-curriculum"), get("img-url-progress")];
-}
-
+   to table cells. This builds a version tuned for that: no !important, bgcolor
+   mirrored onto every filled cell, and images sized to the 600px column. */
 function buildHubspotHTML() {
   const source = document.getElementById("email-body");
   if (!source) return "";
   let html = source.innerHTML;
-  const urls = hostedImageURLs();
 
-  /* swap each embedded graphic for a hosted one, or for text if none given */
-  let n = 0;
-  html = html.replace(/<img[^>]*src="data:image[^"]*"[^>]*>/gi, function() {
-    const url = urls[n];
-    const fallback = HUBSPOT_IMAGE_FALLBACKS[n] || "";
-    n++;
-    if (url) {
-      return '<img src="' + url + '" width="600" style="display:block; width:100%; max-width:600px; height:auto; border:0;" alt="">';
-    }
-    return '<p style="margin:8px 0; font-size:13px; color:#333333;">' + fallback + '</p>';
+  /* the embedded graphics come through fine, they just need sizing that will
+     not overflow the 600px column */
+  html = html.replace(/<img([^>]*)src="(data:image[^"]*)"([^>]*)>/gi, function(m, pre, src) {
+    return '<img src="' + src + '" width="600" style="display:block; width:100%; max-width:600px; height:auto; border:0;" alt="">';
   });
 
   /* HubSpot drops any declaration carrying !important */
@@ -3914,19 +3878,12 @@ function buildHubspotHTML() {
 function copyForHubspot() {
   const html = buildHubspotHTML();
   if (!html) { alert("Open a quote first."); return; }
-  const missing = hostedImageURLs().filter(function(u){ return !u; }).length;
-
   function done() {
     const btn = document.getElementById("hubspot-copy-btn");
     if (btn) {
       const orig = btn.textContent;
       btn.textContent = "Copied!";
       setTimeout(function(){ btn.textContent = orig; }, 2500);
-    }
-    if (missing === 3) {
-      alert("Copied for HubSpot as text only.\n\nHubSpot removes embedded images, so the three graphics were replaced with text. To include them, upload the images to the HubSpot file manager and paste their URLs into \u201CHosted image URLs\u201D under Your details.");
-    } else if (missing > 0) {
-      alert("Copied for HubSpot. " + missing + " image URL(s) were blank, so those sections were sent as text.");
     }
   }
 
