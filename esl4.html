@@ -3564,36 +3564,31 @@ function showTemplateEmail() {
         ${programmeOptions.map(function(p) {
           const fill = p.popular ? "#e7e4f3" : "#f5f5f5";
           const bar  = p.popular ? "#2c1a70" : "#9a93c4";
-          /* Pixel widths, not percentages: HubSpot and Outlook both drop
-             percentage widths on nested cells, which collapses the bar. */
-          const BAR_W = 520;
-          const fillW = Math.max(4, Math.round(BAR_W * p.barPct / 100));
-          const restW = BAR_W - fillW;
+          /* The bar's length comes from its CONTENT, not from a width
+             attribute: HubSpot strips widths on nested tables, which collapses
+             a width-driven bar to a sliver. Non-breaking spaces never collapse,
+             so one per lesson keeps the bars proportional whatever survives. */
+          const MAXL = 40;
+          const pad  = function(n){ let s = ""; for (let i = 0; i < n; i++) s += "&nbsp;"; return s; };
           const badge = p.popular
             ? ' <font color="#a35a00"><strong>- MOST POPULAR</strong></font>'
             : '';
           return '' +
           '<tr>' +
-            '<td bgcolor="' + fill + '" style="background-color:' + fill + '; padding:10px; border:1px solid #e0e0e0;">' +
-              '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
-                '<td align="left" style="font-size:13px; color:#2c1a70; font-family:Arial,Helvetica,sans-serif;">' +
-                  '<strong>' + p.label + '</strong>' + badge + '</td>' +
-                '<td align="right" style="font-size:12px; color:#555555; font-family:Arial,Helvetica,sans-serif;">' +
-                  p.lessons + ' lessons &middot; ' + p.weekly + '</td>' +
-              '</tr></table>' +
-              /* the bar: fixed pixel cells, height on the attribute as well as
-                 the style, and font-size matched to the height so the row
-                 cannot collapse if the inline styles are stripped */
-              '<table cellpadding="0" cellspacing="0" border="0" width="' + BAR_W + '" style="border-collapse:collapse; width:' + BAR_W + 'px; margin:6px 0 4px 0;"><tr>' +
-                '<td width="' + fillW + '" height="6" bgcolor="' + bar + '" style="width:' + fillW + 'px; height:6px; line-height:6px; font-size:6px; background-color:' + bar + ';">&nbsp;</td>' +
-                (restW > 0
-                  ? '<td width="' + restW + '" height="6" bgcolor="#e2e2e2" style="width:' + restW + 'px; height:6px; line-height:6px; font-size:6px; background-color:#e2e2e2;">&nbsp;</td>'
+            '<td bgcolor="' + fill + '" style="background-color:' + fill + '; padding:10px; border:1px solid #e0e0e0; font-family:Arial,Helvetica,sans-serif;">' +
+              '<div style="font-size:13px; color:#2c1a70; margin-bottom:5px;">' +
+                '<strong>' + p.label + '</strong>' + badge + '</div>' +
+              '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
+                '<td bgcolor="' + bar + '" style="background-color:' + bar + '; font-size:7px; line-height:9px;">' + pad(p.lessons) + '</td>' +
+                (p.lessons < MAXL
+                  ? '<td bgcolor="#e2e2e2" style="background-color:#e2e2e2; font-size:7px; line-height:9px;">' + pad(MAXL - p.lessons) + '</td>'
                   : '') +
               '</tr></table>' +
-              '<div style="font-size:12px; color:#666666; font-family:Arial,Helvetica,sans-serif;">' + p.blurb + '</div>' +
+              '<div style="font-size:12px; color:#555555; margin-top:5px;">' +
+                '<strong>' + p.lessons + ' lessons</strong> &middot; ' + p.weekly + ' &nbsp;&middot;&nbsp; ' + p.blurb + '</div>' +
             '</td>' +
           '</tr>' +
-          '<tr><td height="6" style="height:6px; line-height:6px; font-size:6px;">&nbsp;</td></tr>';
+          '<tr><td style="font-size:6px; line-height:6px;">&nbsp;</td></tr>';
         }).join("")}
       </table>
       <p style="margin:6px 0;">Most students choose <strong>${popularProgramme}</strong> - the best balance of progress and free time.</p>
