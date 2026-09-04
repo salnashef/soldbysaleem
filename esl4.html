@@ -3835,49 +3835,40 @@ Oxford International English Schools - ${campus}`;
 /* Copies the rendered email exactly as shown - images, tables, colours and all.
    Writes text/html (rich) and text/plain (fallback) to the clipboard together,
    so email clients paste the formatted version and plain-text clients still work. */
-/* HubSpot's editor sanitises pasted HTML: it discards base64 data URIs
-   entirely, drops declarations carrying !important, and applies its own styles
-   to table cells. This builds a version tuned for that: no !important, bgcolor
-   mirrored onto every filled cell, and images sized to the 600px column. */
-function buildHubspotHTML() {
-  const source = document.getElementById("email-body");
-  if (!source) return "";
-  let html = source.innerHTML;
+/* HubSpot's editor keeps embedded images but applies its own styles to table
+   cells and discards declarations carrying !important. This is deliberately the
+   same copy path as "Copy for Email" - the only difference is a few cheap
+   literal substitutions on the body.
 
-  /* the embedded graphics come through fine, they just need sizing that will
-     not overflow the 600px column */
-  html = html.replace(/<img([^>]*)src="(data:image[^"]*)"([^>]*)>/gi, function(m, pre, src) {
-    return '<img src="' + src + '" width="600" style="display:block; width:100%; max-width:600px; height:auto; border:0;" alt="">';
-  });
-
-  /* HubSpot drops any declaration carrying !important */
-  html = html.replace(/\s*!important/gi, "");
-
-  /* mirror every cell fill into bgcolor, which HubSpot preserves */
-  html = html.replace(/<(td|th|tr)([^>]*)>/gi, function(m, tag, attrs) {
-    const bg = attrs.match(/background(?:-color)?:\s*(#[0-9a-fA-F]{3,6})/i);
-    if (!bg || /bgcolor\s*=/i.test(attrs)) return m;
-    return "<" + tag + attrs + ' bgcolor="' + bg[1].toLowerCase() + '">';
-  });
-
-  /* scroll containers and rounded corners do not survive and can clip content */
-  html = html.replace(/max-height:\s*[^;"]+;?/gi, "")
-             .replace(/overflow-y:\s*[^;"]+;?/gi, "")
-             .replace(/overflow-x:\s*[^;"]+;?/gi, "")
-             .replace(/border-radius:\s*[^;"]+;?/gi, "");
-
-  /* a fixed-width table wrapper renders far more predictably than a div */
-  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" ' +
-         'style="border-collapse:collapse;"><tr><td align="center" style="padding:0;">' +
-         '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" ' +
-         'style="border-collapse:collapse; width:600px; max-width:600px;"><tr>' +
-         '<td style="font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.6; color:#333333; padding:0;">' +
-         html + '</td></tr></table></td></tr></table>';
+   Note: never run a regex like /<img[^>]*src="data:[^"]*"[^>]*>/ over this
+   HTML. Each embedded graphic is a few hundred kilobytes of base64, and the
+   backtracking stalls the copy long enough that the clipboard write silently
+   fails. Every replacement below is anchored on a short literal instead. */
+function hubspotTweaks(html) {
+  return html
+    /* HubSpot deletes the whole declaration when it sees !important */
+    .replace(/\s*!important/gi, "")
+    /* scroll containers can clip the body once pasted */
+    .replace(/max-height:\s*800px;?/gi, "")
+    .replace(/overflow-y:\s*auto;?/gi, "")
+    .replace(/overflow-x:\s*auto;?/gi, "")
+    /* mirror cell fills into bgcolor, which HubSpot preserves */
+    .replace(/<(td|th|tr) style="([^"]*background(?:-color)?:\s*(#[0-9a-fA-F]{3,6})[^"]*)"/gi,
+      function(m, tag, style, colour) {
+        return '<' + tag + ' bgcolor="' + colour.toLowerCase() + '" style="' + style + '"';
+      });
 }
 
 function copyForHubspot() {
-  const html = buildHubspotHTML();
-  if (!html) { alert("Open a quote first."); return; }
+  const source = document.getElementById("email-body");
+  if (!source) { alert("Open a quote first."); return; }
+
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#333333;">' +
+    hubspotTweaks(source.innerHTML) +
+    '</div>';
+  const fallback = source.innerText || "";
+
   function done() {
     const btn = document.getElementById("hubspot-copy-btn");
     if (btn) {
@@ -3886,17 +3877,23 @@ function copyForHubspot() {
       setTimeout(function(){ btn.textContent = orig; }, 2500);
     }
   }
+  function legacyCopy(txt) {
+    navigator.clipboard.writeText(txt).then(function() {
+      done();
+      alert("Copied as plain text (images not included).");
+    });
+  }
 
-  const plain = (document.getElementById("email-body") || {}).innerText || "";
   if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
-    navigator.clipboard.write([new ClipboardItem({
-      "text/html":  new Blob([html], { type:"text/html" }),
-      "text/plain": new Blob([plain], { type:"text/plain" })
-    })]).then(done).catch(function() {
-      navigator.clipboard.writeText(plain).then(done);
+    const item = new ClipboardItem({
+      "text/html":  new Blob([html], { type: "text/html" }),
+      "text/plain": new Blob([fallback], { type: "text/plain" })
+    });
+    navigator.clipboard.write([item]).then(done).catch(function() {
+      legacyCopy(fallback);
     });
   } else {
-    navigator.clipboard.writeText(plain).then(done);
+    legacyCopy(fallback);
   }
 }
 
