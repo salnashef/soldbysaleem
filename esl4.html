@@ -312,7 +312,7 @@
     </div>
   </div>
   <label>Email</label>
-  <input type="email" id="rep-email" placeholder="e.g. name@oxfordinternational.com" value="">
+  <input type="email" id="rep-email" placeholder="LanguageAdmissions@oxfordinternational.com (default)" value="">
 
   <details style="margin-top:8px;">
     <summary style="font-size:12px; color:#555; cursor:pointer;">Hosted image URLs (for HubSpot)</summary>
@@ -3422,7 +3422,7 @@ function getRepDetails() {
   return {
     name:  n.trim() || "Your Admissions Advisor",
     title: t.trim() || "Oxford International English Schools",
-    email: e.trim() || "admissions@oxfordinternational.com"
+    email: e.trim() || "LanguageAdmissions@oxfordinternational.com"
   };
 }
 
@@ -3574,29 +3574,40 @@ function showTemplateEmail() {
       
       <h3 style="margin:15px 0 10px 0; color:#333;">Your Programme Options</h3>
       <p style="margin:6px 0;">Four programmes, same core morning class. The difference is how much you add in the afternoons.</p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin:10px 0; font-size:13px;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:10px 0;">
         ${programmeOptions.map(function(p) {
           const fill = p.popular ? "#e7e4f3" : "#f5f5f5";
           const bar  = p.popular ? "#2c1a70" : "#9a93c4";
+          /* Pixel widths, not percentages: HubSpot and Outlook both drop
+             percentage widths on nested cells, which collapses the bar. */
+          const BAR_W = 520;
+          const fillW = Math.max(4, Math.round(BAR_W * p.barPct / 100));
+          const restW = BAR_W - fillW;
           const badge = p.popular
-            ? ' <span style="background-color:#FFB84D; color:#2c1a70; font-size:10px; font-weight:bold; padding:1px 5px; border-radius:3px;">MOST POPULAR</span>'
+            ? ' <font color="#a35a00"><strong>- MOST POPULAR</strong></font>'
             : '';
           return '' +
           '<tr>' +
-            '<td bgcolor="' + fill + '" style="background-color:' + fill + '; padding:8px 10px; border:1px solid #e0e0e0;">' +
-              '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>' +
-                '<td style="font-size:13px; color:#2c1a70;"><strong>' + p.label + '</strong>' + badge + '</td>' +
-                '<td align="right" style="font-size:12px; color:#555; white-space:nowrap;">' + p.lessons + ' lessons &middot; ' + p.weekly + '</td>' +
+            '<td bgcolor="' + fill + '" style="background-color:' + fill + '; padding:10px; border:1px solid #e0e0e0;">' +
+              '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
+                '<td align="left" style="font-size:13px; color:#2c1a70; font-family:Arial,Helvetica,sans-serif;">' +
+                  '<strong>' + p.label + '</strong>' + badge + '</td>' +
+                '<td align="right" style="font-size:12px; color:#555555; font-family:Arial,Helvetica,sans-serif;">' +
+                  p.lessons + ' lessons &middot; ' + p.weekly + '</td>' +
               '</tr></table>' +
-              /* intensity bar, drawn with table cells so Outlook renders it */
-              '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin:5px 0 3px 0;"><tr>' +
-                '<td width="' + p.barPct + '%" bgcolor="' + bar + '" style="background-color:' + bar + '; font-size:0; line-height:5px; height:5px;">&nbsp;</td>' +
-                (p.barPct >= 100 ? '' :
-                  '<td width="' + (100 - p.barPct) + '%" bgcolor="#e2e2e2" style="background-color:#e2e2e2; font-size:0; line-height:5px; height:5px;">&nbsp;</td>') +
+              /* the bar: fixed pixel cells, height on the attribute as well as
+                 the style, and font-size matched to the height so the row
+                 cannot collapse if the inline styles are stripped */
+              '<table cellpadding="0" cellspacing="0" border="0" width="' + BAR_W + '" style="border-collapse:collapse; width:' + BAR_W + 'px; margin:6px 0 4px 0;"><tr>' +
+                '<td width="' + fillW + '" height="6" bgcolor="' + bar + '" style="width:' + fillW + 'px; height:6px; line-height:6px; font-size:6px; background-color:' + bar + ';">&nbsp;</td>' +
+                (restW > 0
+                  ? '<td width="' + restW + '" height="6" bgcolor="#e2e2e2" style="width:' + restW + 'px; height:6px; line-height:6px; font-size:6px; background-color:#e2e2e2;">&nbsp;</td>'
+                  : '') +
               '</tr></table>' +
-              '<span style="font-size:12px; color:#666;">' + p.blurb + '</span>' +
+              '<div style="font-size:12px; color:#666666; font-family:Arial,Helvetica,sans-serif;">' + p.blurb + '</div>' +
             '</td>' +
-          '</tr>';
+          '</tr>' +
+          '<tr><td height="6" style="height:6px; line-height:6px; font-size:6px;">&nbsp;</td></tr>';
         }).join("")}
       </table>
       <p style="margin:6px 0;">Most students choose <strong>${popularProgramme}</strong> - the best balance of progress and free time.</p>
