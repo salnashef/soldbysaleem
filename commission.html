@@ -261,6 +261,8 @@
             <div class="block">
                 <div class="block-label" id="ac_netLabel">Your Net Payout</div>
                 <div class="line"><span id="ac_sideCommLabel">Gross Commission (Buyer Side)</span><span id="ac_sideComm"></span></div>
+                <div class="line"><span>GST (5%)</span><span id="ac_gstAmount"></span></div>
+                <div class="line"><span>Total Commission incl. GST</span><span id="ac_totalWithGst"></span></div>
                 <div class="line deduction"><span id="ac_splitLabel">Brokerage Split (15%)</span><span id="ac_splitAmount"></span></div>
                 <div class="line deduction"><span>Deal Fee</span><span id="ac_feeAmount"></span></div>
                 <div class="line net"><span>You Take Home</span><span id="ac_netPayout"></span></div>
@@ -419,10 +421,14 @@
         var yourGross = sideCommission * (splitPct / 100);
         var brokerageAmount = sideCommission - yourGross;
         var netPayout = yourGross - dealFee;
+        var gstAmount = sideCommission * 0.05;
+        var totalWithGst = sideCommission + gstAmount;
 
         document.getElementById('ac_netLabel').textContent = 'Your Net Payout (' + (acSide === 'buyer' ? 'Buyer Side' : 'Seller Side') + ')';
         document.getElementById('ac_sideCommLabel').textContent = 'Gross Commission (' + (acSide === 'buyer' ? 'Buyer' : 'Seller') + ' Side)';
         document.getElementById('ac_sideComm').textContent = formatMoney(sideCommission);
+        document.getElementById('ac_gstAmount').textContent = '+' + formatMoney(gstAmount);
+        document.getElementById('ac_totalWithGst').textContent = formatMoney(totalWithGst);
         document.getElementById('ac_splitLabel').textContent = 'Brokerage Split (' + (100 - splitPct).toFixed(0) + '%)';
         document.getElementById('ac_splitAmount').textContent = '-' + formatMoney(brokerageAmount);
         document.getElementById('ac_feeAmount').textContent = '-' + formatMoney(dealFee);
