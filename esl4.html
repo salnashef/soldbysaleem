@@ -3926,13 +3926,16 @@ function hubspotTweaks(html) {
   html = html.replace(
     /<table class="oi-bar" data-lessons="(\d+)" data-max="(\d+)" data-fill="(#[0-9a-fA-F]{3,6})"[\s\S]{0,600}?<\/table>/gi,
     function(m, lessons, max, fillColour) {
+      /* HubSpot also strips <font color>, so a filled-plus-grey bar arrives as
+         one uniform run and every programme looks identical. The length of the
+         bar has to carry the meaning on its own: draw only the filled part, no
+         remainder, so 20 / 26 / 30 / 40 lessons read as visibly different runs
+         whether or not any colour survives. */
       const BLOCKS = 20;
       const filled = Math.max(1, Math.round((parseInt(lessons, 10) / parseInt(max, 10)) * BLOCKS));
-      const rest   = BLOCKS - filled;
       const rep    = function(ch, n){ let s = ""; for (let i = 0; i < n; i++) s += ch; return s; };
-      return '<div style="margin:6px 0 4px 0; font-size:13px; line-height:13px; letter-spacing:-1px;">' +
+      return '<div style="margin:6px 0 4px 0; font-size:13px; line-height:14px; letter-spacing:-1px; color:' + fillColour + ';">' +
              '<font color="' + fillColour + '">' + rep("\u2588", filled) + '</font>' +
-             (rest > 0 ? '<font color="#d8d8d8">' + rep("\u2588", rest) + '</font>' : '') +
              '</div>';
     });
 
