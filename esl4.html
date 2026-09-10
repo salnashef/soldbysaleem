@@ -3664,7 +3664,8 @@ function showTemplateEmail() {
                   : '') +
               '</tr></table>' +
               '<div style="font-size:12px; color:#555555; margin-top:5px;">' +
-                '<strong>' + p.lessons + ' lessons</strong> &middot; ' + p.weekly + ' &nbsp;&middot;&nbsp; ' + p.blurb + '</div>' +
+                '<strong>' + p.lessons + ' lessons per week</strong> &middot; <strong>' + p.weekly + '</strong> of class time' +
+                '<br>' + p.blurb + '</div>' +
             '</td>' +
           '</tr>' +
           '<tr><td style="font-size:6px; line-height:6px;">&nbsp;</td></tr>';
@@ -3917,27 +3918,15 @@ Oxford International English Schools - ${campus}`;
    backtracking stalls the copy long enough that the clipboard write silently
    fails. Every replacement below is anchored on a short literal instead. */
 function hubspotTweaks(html) {
-  /* HubSpot collapses the spacer content and strips widths from nested tables,
-     so a table-drawn bar arrives as a thin vertical sliver whatever we do.
-     Swap it for a run of block characters: plain text, nothing to strip or
-     collapse, and it keeps the same proportions. The regex is anchored on the
-     oi-bar class and these tables are tiny, so it never touches the base64
-     image data elsewhere in the body. */
+  /* The bar is removed for HubSpot rather than redrawn. Four approaches were
+     tried - percentage widths, pixel widths, non-breaking-space runs and
+     coloured block characters - and HubSpot strips or normalises something in
+     each, so every programme ends up looking identical. A bar that reads the
+     same for 20 lessons as for 40 is worse than no bar: the lesson count and
+     hours on the line below already carry the comparison. */
   html = html.replace(
-    /<table class="oi-bar" data-lessons="(\d+)" data-max="(\d+)" data-fill="(#[0-9a-fA-F]{3,6})"[\s\S]{0,600}?<\/table>/gi,
-    function(m, lessons, max, fillColour) {
-      /* HubSpot also strips <font color>, so a filled-plus-grey bar arrives as
-         one uniform run and every programme looks identical. The length of the
-         bar has to carry the meaning on its own: draw only the filled part, no
-         remainder, so 20 / 26 / 30 / 40 lessons read as visibly different runs
-         whether or not any colour survives. */
-      const BLOCKS = 20;
-      const filled = Math.max(1, Math.round((parseInt(lessons, 10) / parseInt(max, 10)) * BLOCKS));
-      const rep    = function(ch, n){ let s = ""; for (let i = 0; i < n; i++) s += ch; return s; };
-      return '<div style="margin:6px 0 4px 0; font-size:13px; line-height:14px; letter-spacing:-1px; color:' + fillColour + ';">' +
-             '<font color="' + fillColour + '">' + rep("\u2588", filled) + '</font>' +
-             '</div>';
-    });
+    /<table class="oi-bar"[\s\S]{0,600}?<\/table>/gi,
+    '<div style="font-size:4px; line-height:4px;">&nbsp;</div>');
 
   return html
     /* HubSpot deletes the whole declaration when it sees !important */
