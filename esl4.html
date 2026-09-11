@@ -697,7 +697,7 @@ function regularWeeklyRate(country, prog, duration) {
 }
 
 function onshoreWeeklyRate(country, prog, duration) {
-  if (onshoreOnlyPrograms[prog]) return onshoreOnlyRate(prog, duration);
+  if (fixedRatePrograms[prog]) return fixedRateFor(prog, duration);
   if (country === "Canada") return onshoreRatesCanada[prog] || 0;
   return prog.indexOf("Morning") !== -1 ? (duration >= 4 ? 170 : 190) : (duration >= 4 ? 140 : 160);
 }
@@ -708,27 +708,32 @@ const onshoreRatesCanada = {
   "Intensive 30":230, "Super Intensive 40":300
 };
 
-/* Onshore-only programmes that are not in the offshore price schedules.
-   Evening IELTS Prep is rate-tiered by length rather than flat. */
-const onshoreOnlyPrograms = {
+/* Programs sold at one weekly rate to both offshore and onshore students, and
+   not present in the offshore price schedules. Evening IELTS Prep is rate-tiered
+   by length rather than flat. */
+const fixedRatePrograms = {
   "Evening IELTS Prep": {
     country:"Canada",
-    tiers:[ { min:8, rate:105 }, { min:4, rate:122 } ],
+    tiers:[ { min:8, rate:105 }, { min:4, rate:125 } ],
+    minWeeks:4,
+    startDate:"2026-10-12",
     materialsPerWeek:5,
     /* taught in hours, not 45-minute lessons */
     hoursPerDay:2, daysPerWeek:4, hoursPerWeek:8,
     hoursNote:"2 hours per evening, Monday to Thursday",
     scheduleNote:"Monday to Thursday, 6:00pm - 8:00pm",
-    note:"Evening class, Monday to Thursday 6-8pm. $122/wk for 4-7 weeks, $105/wk from 8 weeks. Materials $5/wk."
+    note:"Evening class, Monday to Thursday 6-8pm. Starts 12 October 2026. Minimum 4 weeks. $125/wk for 4-7 weeks, $105/wk from 8 weeks. Materials $5/wk."
   }
 };
 
-function onshoreOnlyRate(prog, duration) {
-  const p = onshoreOnlyPrograms[prog];
+function fixedRateFor(prog, duration) {
+  const p = fixedRatePrograms[prog];
   if (!p) return 0;
-  const tier = p.tiers.filter(function(t){ return duration >= t.min; })
+  /* the course has a minimum length, so anything shorter is priced at the
+     minimum rather than at an unpublished short rate */
+  const weeks = Math.max(duration, p.minWeeks || 0);
+  const tier = p.tiers.filter(function(t){ return weeks >= t.min; })
                       .sort(function(a, b){ return b.min - a.min; })[0];
-  /* below the shortest published tier, hold the shortest tier's rate */
   return tier ? tier.rate : p.tiers[p.tiers.length - 1].rate;
 }
 
@@ -1169,11 +1174,10 @@ function updateProgramTypeDropdown() {
       if (cat === "onshore" && country === "Canada" && !onshoreRatesCanada[p]) return;
       opts.push({ value:p, label:p });
     });
-    if (cat === "onshore") {
-      Object.keys(onshoreOnlyPrograms).forEach(function(p) {
-        if (onshoreOnlyPrograms[p].country === country) opts.push({ value:p, label:p });
-      });
-    }
+    /* offered to both offshore and onshore students */
+    Object.keys(fixedRatePrograms).forEach(function(p) {
+      if (fixedRatePrograms[p].country === country) opts.push({ value:p, label:p });
+    });
     if (cat === "offshore") {
       Object.keys(specialPrograms).forEach(function(p) {
         const sp = specialPrograms[p];
@@ -1213,9 +1217,9 @@ function showProgramNote() {
     }
   }
 
-  const onshoreOnly = onshoreOnlyPrograms[prog];
-  if (onshoreOnly && onshoreOnly.note) {
-    box.textContent = onshoreOnly.note;
+  const fixedRate = fixedRatePrograms[prog];
+  if (fixedRate && fixedRate.note) {
+    box.textContent = fixedRate.note;
     box.style.display = "block";
     return;
   }
@@ -1329,18 +1333,26 @@ function programPricing(prog, country, campus, cat, duration) {
     }
   }
 
+  /* Same weekly rate regardless of category, so these are priced before the
+     offshore/onshore split rather than inside either branch. */
+  const onlyProg = fixedRatePrograms[prog];
+  if (onlyProg) {
+    /* billed at the minimum length even if fewer weeks are entered */
+    if (onlyProg.minWeeks && duration < onlyProg.minWeeks) duration = onlyProg.minWeeks;
+    const rate = fixedRateFor(prog, duration);
+    return { rate:rate, chargedRate:rate, tuition:rate * duration,
+             rateNote:money(rate, country) + "/wk x " + duration + " wks",
+             startDateLabel: onlyProg.startDate
+               ? new Date(onlyProg.startDate + "T00:00:00").toLocaleDateString("en-CA",
+                   { day:"numeric", month:"long", year:"numeric" }) + " intake"
+               : null,
+             materialsOverride: onlyProg.materialsPerWeek * duration,
+             materialsNote: money(onlyProg.materialsPerWeek, country) + "/wk x " + duration + " wks",
+             skipRegistration:false, onshore:false };
+  }
+
   if (cat === "onshore") {
     const charged = onshoreWeeklyRate(country, prog, duration);
-    const only    = onshoreOnlyPrograms[prog];
-    if (only) {
-      /* onshore-only course: no offshore list price, so nothing to discount
-         against, and materials are charged per week rather than per block */
-      return { rate:charged, chargedRate:charged, tuition:charged * duration,
-               rateNote:money(charged, country) + "/wk x " + duration + " wks",
-               materialsOverride: only.materialsPerWeek * duration,
-               materialsNote: money(only.materialsPerWeek, country) + "/wk x " + duration + " wks",
-               skipRegistration:false, onshore:false };
-    }
     let regular = regularWeeklyRate(country, prog, duration);
     if (!regular || regular < charged) regular = charged;
     return { rate:regular, chargedRate:charged, tuition:regular * duration,
@@ -1549,6 +1561,7 @@ function calculateGeneric(prog) {
     duration:duration, rate:pp.rate, chargedRate:pp.chargedRate, netRate:netRate,
     isExtension:isExtension,
     rateNote:pp.rateNote, packageWeeks:pp.packageWeeks, onshore:!!pp.onshore,
+    fixedRateStart:pp.startDateLabel || null,
     tuitionBeforeDiscount:tuitionBeforeDiscount, discount:discount, discountAmount:discountAmount,
     discountLabel:discountLabel, discountShort:discountShort,
     extraDiscountPct:extraDiscountPct, extraDiscountAmount:extraDiscountAmount,
@@ -1610,6 +1623,7 @@ function quoteHeaderRows(d, extra) {
     );
   }
   if (d.isExtension) rows.push(["Quote type", "Course extension (enrolment fee waived)"]);
+  if (d.fixedRateStart) rows.push(["Course start", d.fixedRateStart]);
   if (d.junior && d.juniorPkg) {
     const fmt = function(iso) {
       return new Date(iso + "T00:00:00").toLocaleDateString("en-CA", { day:"numeric", month:"long", year:"numeric" });
@@ -3197,9 +3211,36 @@ function showSchedule() {
   }
 }
 
+/* Courses with a published minimum length clamp the duration box, so the
+   quoted weeks always match the weeks actually billed. */
+function syncFixedRateMinimum() {
+  const prog = document.getElementById("program-type").value;
+  const only = fixedRatePrograms[prog];
+  const dur  = document.getElementById("duration");
+  const hint = document.getElementById("duration-hint");
+  if (only && only.minWeeks) {
+    dur.min = only.minWeeks;
+    if ((parseInt(dur.value, 10) || 0) < only.minWeeks) dur.value = only.minWeeks;
+    if (hint) hint.textContent = "(minimum " + only.minWeeks + " weeks)";
+    /* the course has one published intake, so default the start date to it */
+    if (only.startDate) {
+      const sd = document.getElementById("start-date");
+      if (sd) { sd.value = only.startDate; sd.min = only.startDate; }
+    }
+    return;
+  }
+  const sd = document.getElementById("start-date");
+  if (sd) sd.removeAttribute("min");
+  if (!isCareerCollege() && !isJunior()) {
+    dur.min = 1;
+    if (hint) hint.textContent = "";
+  }
+}
+
 function handleProgramChange() {
   if (isCareerCollege()) syncCareerCollegeDuration();
   if (isJunior()) updateJuniorTiers();
+  syncFixedRateMinimum();
   showProgramNote();
   showSchedule();
 }
@@ -3344,7 +3385,7 @@ function lessonHoursData(country) {
   }
   const out = [];
   progs.forEach(function(p) {
-    const only = onshoreOnlyPrograms[p];
+    const only = fixedRatePrograms[p];
     if (only && only.hoursPerWeek) {
       out.push({ label: p, hoursOnly: true,
                  weekly: only.hoursPerWeek + " hours", detail: only.hoursNote });
