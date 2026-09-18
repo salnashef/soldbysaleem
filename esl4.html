@@ -509,7 +509,7 @@ const careerCollegePrograms = {
    tier is not offered, so those tiers are simply absent here. */
 const juniorVenues = {
   Canada: [
-    { value:"TMU", label:"Toronto Metropolitan University", city:"Toronto",
+    { value:"TMU", label:"Toronto Metropolitan University", city:"Toronto", region:"ON",
       packages:[
         { value:"TMU-STEM-RES", label:"Summer STEM - Residential", course:"STEM", accom:"Residential",
           room:"Shared multi-room apartment, shared bathroom", ages:"8-18", unit:"nights",
@@ -533,7 +533,7 @@ const juniorVenues = {
           room:"-", ages:"8-18", unit:"weeks",
           start:"2027-06-27", end:"2027-08-08", prices:{1:625,2:1245,3:1845,4:2435} }
       ] },
-    { value:"UBC", label:"University of British Columbia", city:"Vancouver",
+    { value:"UBC", label:"University of British Columbia", city:"Vancouver", region:"BC",
       packages:[
         { value:"UBC-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
           room:"Single room, single gender shared communal bathroom", ages:"9-17", unit:"nights",
@@ -545,13 +545,13 @@ const juniorVenues = {
           room:"-", ages:"9-17", unit:"weeks",
           start:"2027-06-27", end:"2027-08-08", prices:{1:670,2:1325,3:1990,4:2780} }
       ] },
-    { value:"OI-TORONTO", label:"Oxford International Toronto (Downtown Homestay)", city:"Toronto",
+    { value:"OI-TORONTO", label:"Oxford International Toronto (Downtown Homestay)", city:"Toronto", region:"ON",
       packages:[
         { value:"OIT-HOMESTAY", label:"Classic - Downtown Homestay", course:"Classic", accom:"Homestay",
           room:"Twin room, shared bathroom", ages:"10-18", unit:"nights",
           start:"2027-06-27", end:"2027-08-08", prices:{7:2460,13:3615,14:3715,21:5020,28:6315} }
       ] },
-    { value:"OI-VANCOUVER", label:"Oxford International Vancouver (Downtown Homestay)", city:"Vancouver",
+    { value:"OI-VANCOUVER", label:"Oxford International Vancouver (Downtown Homestay)", city:"Vancouver", region:"BC",
       packages:[
         { value:"OIV-HOMESTAY", label:"Classic - Downtown Homestay", course:"Classic", accom:"Homestay",
           room:"Twin room, shared bathroom", ages:"10-18", unit:"nights",
@@ -559,7 +559,7 @@ const juniorVenues = {
       ] }
   ],
   USA: [
-    { value:"FAU", label:"Florida Atlantic University", city:"Boca Raton",
+    { value:"FAU", label:"Florida Atlantic University", city:"Boca Raton", region:"FL",
       packages:[
         { value:"FAU-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
           room:"4-bed apartments (single and twin), semi-private bathroom", ages:"12-17", unit:"nights",
@@ -571,7 +571,7 @@ const juniorVenues = {
           room:"-", ages:"12-17", unit:"weeks",
           start:"2027-06-27", end:"2027-08-01", prices:{1:540,2:865,3:1115,4:1370} }
       ] },
-    { value:"LIU", label:"Long Island University, Brooklyn", city:"New York",
+    { value:"LIU", label:"Long Island University, Brooklyn", city:"Brooklyn", region:"NY",
       packages:[
         { value:"LIU-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
           room:"Dorm-style twin rooms, shared communal bathroom", ages:"12-18", unit:"nights",
@@ -586,7 +586,7 @@ const juniorVenues = {
           room:"-", ages:"12-18", unit:"weeks",
           start:"2027-06-27", end:"2027-08-08", prices:{1:540,2:885,3:1160,4:1435} }
       ] },
-    { value:"PEPPERDINE", label:"Pepperdine University", city:"Los Angeles",
+    { value:"PEPPERDINE", label:"Pepperdine University", city:"Malibu", region:"CA",
       packages:[
         { value:"PEP-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
           room:"4-twin bedroom apartment, semi-private bathroom", ages:"10-17", unit:"nights",
@@ -598,7 +598,7 @@ const juniorVenues = {
           room:"-", ages:"10-17", unit:"weeks",
           start:"2027-06-27", end:"2027-07-31", prices:{1:540,2:1030,3:1465,4:1845} }
       ] },
-    { value:"BERKELEY", label:"University of California, Berkeley", city:"Berkeley",
+    { value:"BERKELEY", label:"University of California, Berkeley", city:"Berkeley", region:"CA",
       packages:[
         { value:"UCB-CLASSIC-RES", label:"Classic - Residential", course:"Classic", accom:"Residential",
           room:"Double or triple room, shared communal bathroom", ages:"13-17", unit:"nights",
@@ -625,11 +625,23 @@ const juniorFees = {
             transferAirports:{ FAU:"MIA / FLL", LIU:"JFK / EWR / LGA", PEPPERDINE:"LAX", BERKELEY:"SFO" } }
 };
 
+/* "Boca Raton, FL" / "Vancouver, BC" - shown on the campus dropdown and in
+   the quote so the student knows where the camp actually is. */
+function juniorLocation(v) {
+  if (!v || !v.city) return "";
+  /* several venues carry their city in the name already ("...Berkeley",
+     "...Brooklyn"), so repeating it reads as a stutter - show just the
+     province or state in those cases. */
+  if (v.label && v.label.indexOf(v.city) !== -1) return v.region || "";
+  return v.region ? v.city + ", " + v.region : v.city;
+}
+
 const juniorPackageIndex = {};
 Object.keys(juniorVenues).forEach(function(co) {
   juniorVenues[co].forEach(function(v) {
     v.packages.forEach(function(p) {
-      juniorPackageIndex[p.value] = Object.assign({}, p, { venue:v.value, venueLabel:v.label, country:co, city:v.city });
+      juniorPackageIndex[p.value] = Object.assign({}, p, { venue:v.value, venueLabel:v.label,
+        country:co, city:v.city, region:v.region, location:juniorLocation(v) });
     });
   });
 });
@@ -1088,7 +1100,10 @@ function updateCampusDropdown() {
   if (!country) return;
   if (isJunior()) {
     (juniorVenues[country] || []).forEach(function(v) {
-      const o = document.createElement("option"); o.value = v.value; o.textContent = v.label;
+      const o = document.createElement("option");
+      o.value = v.value;
+      const loc = juniorLocation(v);
+      o.textContent = loc ? v.label + " - " + loc : v.label;
       cd.appendChild(o);
     });
     updateJuniorTransfers();
@@ -1421,7 +1436,8 @@ function calculateJunior(pkg) {
     junior:true, juniorPkg:pkg, juniorTier:tier, juniorUnit:pkg.unit,
     juniorNights:nights, juniorStart:startISO,
     juniorEnd:endDate.toISOString().slice(0, 10),
-    cat:"offshore", country:country, campus:pkg.venueLabel,
+    cat:"offshore", country:country,
+    campus: pkg.location ? pkg.venueLabel + ", " + pkg.location : pkg.venueLabel,
     duration:Math.max(1, weeks), rate:packagePrice, chargedRate:packagePrice,
     netRate:weeks > 0 ? tuitionFinal / weeks : tuitionFinal,
     rateNote:"Package price for " + tier + " " + pkg.unit,
