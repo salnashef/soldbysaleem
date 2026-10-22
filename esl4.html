@@ -755,7 +755,8 @@ function fixedRateFor(prog, duration) {
 const registrationFees      = { Canada:185, USA:200 };
 const insuranceRates        = { Canada:3.10, USA:4.30 };
 const homestayPlacementFees = { Canada:280, USA:200 };
-const materialsPerBlock     = { Canada:140, USA:110 };   // per 12-week block
+/* English course materials: $70 for 1-6 weeks, then +$10 per week from week 7, capped at $330 */
+const MATERIALS_BASE = 70, MATERIALS_BASE_WEEKS = 6, MATERIALS_PER_EXTRA_WEEK = 10, MATERIALS_MAX = 330;
 const changeFees            = { Canada:120, USA:100 };
 const specialDietWeekly     = 49;
 const MINOR_SUPPLEMENT_WEEKLY_RATE = 49;
@@ -1384,11 +1385,16 @@ function programPricing(prog, country, campus, cat, duration) {
 }
 
 function calculateMaterialFee(country, campus, duration) {
-  const perBlock = (country === "USA") ? materialsPerBlock.USA : materialsPerBlock.Canada;
-  let total = Math.ceil(duration / 12) * perBlock;
-  const halfPrice = duration <= 8;
-  if (halfPrice) total = total * 0.5;
-  return { total:total, halfPrice:halfPrice, perBlock:perBlock };
+  const weeks = Math.max(0, duration || 0);
+  if (weeks === 0) return { total:0, note:"" };
+  const extraWeeks = Math.max(0, weeks - MATERIALS_BASE_WEEKS);
+  const raw   = MATERIALS_BASE + extraWeeks * MATERIALS_PER_EXTRA_WEEK;
+  const total = Math.min(raw, MATERIALS_MAX);
+  let note;
+  if (extraWeeks === 0) note = money(MATERIALS_BASE, country) + " flat (1-6 wks)";
+  else if (raw > MATERIALS_MAX) note = "Maximum " + money(MATERIALS_MAX, country);
+  else note = money(MATERIALS_BASE, country) + " + " + money(MATERIALS_PER_EXTRA_WEEK, country) + "/wk x " + extraWeeks + " wks after week 6";
+  return { total:total, note:note };
 }
 
 /* =========================================================================
@@ -1555,8 +1561,7 @@ function calculateGeneric(prog) {
   const mat    = calculateMaterialFee(country, campus, duration);
   const matTotal = pp.materialsOverride !== null && pp.materialsOverride !== undefined
     ? pp.materialsOverride : mat.total;
-  const matNote  = pp.materialsNote || (money(matTotal / (duration || 1), country) + "/wk"
-    + (mat.halfPrice ? " (50% short-duration discount, 8 wks or less)" : ""));
+  const matNote  = pp.materialsNote || mat.note;
 
   const transferFee = pp.noTransfer ? 0 : (airportTransferPrices[country][campus][transferType] || 0);
   const insFee   = optOutIns ? 0 : duration * 7 * insuranceRates[country];
