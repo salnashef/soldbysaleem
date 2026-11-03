@@ -755,8 +755,8 @@ function fixedRateFor(prog, duration) {
 const registrationFees      = { Canada:185, USA:200 };
 const insuranceRates        = { Canada:3.10, USA:4.30 };
 const homestayPlacementFees = { Canada:280, USA:200 };
-/* English course materials: $70 for 1-6 weeks, then +$10 per week from week 7, capped at $330 */
-const MATERIALS_BASE = 70, MATERIALS_BASE_WEEKS = 6, MATERIALS_PER_EXTRA_WEEK = 10, MATERIALS_MAX = 330;
+/* English course materials: $70 for 1-7 weeks, then +$10 per week from week 8, capped at $330 */
+const MATERIALS_BASE = 70, MATERIALS_BASE_WEEKS = 7, MATERIALS_PER_EXTRA_WEEK = 10, MATERIALS_MAX = 330;
 const changeFees            = { Canada:120, USA:100 };
 const specialDietWeekly     = 49;
 const MINOR_SUPPLEMENT_WEEKLY_RATE = 49;
@@ -1391,9 +1391,9 @@ function calculateMaterialFee(country, campus, duration) {
   const raw   = MATERIALS_BASE + extraWeeks * MATERIALS_PER_EXTRA_WEEK;
   const total = Math.min(raw, MATERIALS_MAX);
   let note;
-  if (extraWeeks === 0) note = money(MATERIALS_BASE, country) + " flat (1-6 wks)";
+  if (extraWeeks === 0) note = money(MATERIALS_BASE, country) + " flat (1-7 wks)";
   else if (raw > MATERIALS_MAX) note = "Maximum " + money(MATERIALS_MAX, country);
-  else note = money(MATERIALS_BASE, country) + " + " + money(MATERIALS_PER_EXTRA_WEEK, country) + "/wk x " + extraWeeks + " wks after week 6";
+  else note = money(MATERIALS_BASE, country) + " + " + money(MATERIALS_PER_EXTRA_WEEK, country) + "/wk x " + extraWeeks + " wks after week 7";
   return { total:total, note:note };
 }
 
