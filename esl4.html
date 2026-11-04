@@ -257,8 +257,8 @@
         <span style="margin-left:6px;" id="opt-a-label">Elective A (default)</span>
       </label>
       <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
-        <input type="radio" name="elective-option" value="C" onclick="updateSchedule()">
-        <span style="margin-left:6px;" id="opt-c-label">Elective C instead</span>
+        <input type="radio" name="elective-option" value="D" onclick="updateSchedule()">
+        <span style="margin-left:6px;" id="opt-c-label">Elective D instead</span>
       </label>
     </div>
 
@@ -290,7 +290,7 @@
         </label>
         <label style="font-weight:normal; font-size:12px; display:flex; align-items:center; margin-bottom:0;">
           <input type="checkbox" id="show-study-club" onchange="updateSchedule()" checked>
-          <span style="margin-left:6px;">Study Club</span>
+          <span style="margin-left:6px;">Study Club / IEC Workshops</span>
         </label>
       </div>
     </div>
@@ -2448,6 +2448,12 @@ function clearForm() {
   document.getElementById("agent-section").style.display  = "none";
   document.getElementById("agent-result").style.display   = "none";
   document.getElementById("schedule-display").style.display = "none";
+  document.querySelectorAll(".elective-check").forEach(function(el) {
+    el.checked = (el.value === "A" || el.value === "B");
+  });
+  document.querySelectorAll('input[name="elective-option"]').forEach(function(el) {
+    el.checked = (el.value === "A");
+  });
   if (typeof electiveBlinkInterval !== 'undefined' && electiveBlinkInterval) {
     clearInterval(electiveBlinkInterval);
     electiveBlinkInterval = null;
@@ -2467,19 +2473,20 @@ function updateSchedule() {
    published A/B and C/D timetables. Days are Mon-Fri (0-4). This lets any
    combination of tracks be drawn, rather than only the two published pairs. */
 const ELECTIVE_SLOTS = {
-  A: { "12:45-13:30":[0,4], "13:30-14:15":[0,4], "14:20-15:05":[1,2] },
-  B: { "12:45-13:30":[1,3], "13:30-14:15":[1,3] },
-  C: { "12:45-13:30":[2],   "13:30-14:15":[2],   "14:20-15:05":[0,3,4], "15:10-15:55":[0] },
-  D: { "15:10-15:55":[1,3], "15:55-16:40":[1,3] }
+  A: { "12:45-13:30":[0,2,4], "13:30-14:15":[0,2,4] },                       /* 6 lessons */
+  B: { "12:45-13:30":[1,3],   "13:30-14:15":[1,3] },                         /* 4 lessons */
+  C: { "14:20-15:05":[0,2,4], "15:10-15:55":[0] },                           /* 4 lessons */
+  D: { "14:20-15:05":[1,3],   "15:10-15:55":[1,3], "15:55-16:40":[1,3] }     /* 6 lessons */
 };
+/* A+B = 30, C+D = 30, A alone = 26, D alone = 26, all four = 40 */
 
 /* Campus-wide afternoon activities that sit alongside the elective tracks on
    the master timetable. Not electives, so they are never counted as lessons.
    Each is toggled independently, so a quote can show one, both or neither. */
-const PM_SOCIAL = { "15:10-15:55":[2, 4] };              /* Wed and Fri */
-const PM_STUDY  = { "15:10-15:55":[4], "15:55-16:40":[2] }; /* Fri, then Wed */
-const PM_PATHWAYS = { "15:10-15:55":[2] };               /* Wed, alongside social */
-const PM_ACTIVITY_WEDNESDAY_EXTRA = "Pathways Class**";
+const PM_SOCIAL   = { "15:10-15:55":[2, 4], "15:55-16:40":[2, 4] };  /* Wed and Fri, 15:05-16:40 */
+const PM_STUDY    = { "15:10-15:55":[2],    "15:55-16:40":[2] };     /* Wed, 15:05-16:40 */
+const PM_PATHWAYS = { "15:10-15:55":[2],    "15:55-16:40":[2] };     /* Wed, runs alongside */
+const PM_ACTIVITY_WEDNESDAY_EXTRA = "Pathways**";
 
 function showSocialProgramme() {
   const el = document.getElementById("show-social");
@@ -2497,7 +2504,7 @@ function activityLabels(slot, day) {
     out.push("Afternoon Social Programme*");
   }
   if (showStudyClub() && (PM_STUDY[slot] || []).indexOf(day) !== -1) {
-    out.push("Study Club");
+    out.push("Study Club / IEC Workshops");
   }
   return out;
 }
@@ -2532,7 +2539,7 @@ function electiveClashes(tracks) {
   return clashes;
 }
 
-function buildIntensive30Schedule(tracks) {
+function buildIntensive30Schedule(tracks, title) {
   const DAYS = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"];
   const cell = function(style, text) {
     return '<td style="padding:8px; border:1px solid #ddd; text-align:center; ' + style + '">' + text + '</td>';
@@ -2548,7 +2555,7 @@ function buildIntensive30Schedule(tracks) {
     return '<td style="padding:8px; border:1px solid #ddd; font-weight:bold; background:#f9f9f9; font-size:10px;">' + t + '</td>';
   };
 
-  let html = '<div style="margin-bottom:15px;"><strong style="font-size:14px; color:#0077cc;">Intensive 30 - Weekly Schedule</strong>' +
+  let html = '<div style="margin-bottom:15px;"><strong style="font-size:14px; color:#0077cc;">' + (title || "Intensive 30") + ' - Weekly Schedule</strong>' +
              (tracks.length ? ' <span style="font-size:12px; color:#666;">(Elective ' + tracks.join(" + ") + ')</span>' : '') +
              '</div><table style="width:100%; border-collapse:collapse; font-size:11px;">';
 
@@ -2603,10 +2610,10 @@ function buildIntensive30Schedule(tracks) {
       const acts = here.length === 0 ? activityLabels(slot, d) : [];
       if (acts.length) {
         const isSocial = acts.some(function(a){ return a.indexOf("Social") !== -1; });
-        const pathways = showSocialProgramme() && (PM_PATHWAYS[slot] || []).indexOf(d) !== -1;
+        const pathways = (PM_PATHWAYS[slot] || []).indexOf(d) !== -1;
         html += cell(isSocial ? "background:#ff6b6b; color:#ffffff; font-weight:bold; font-size:10px;"
                               : "background:#fff9c4; color:#5a4a00; font-weight:bold; font-size:10px;",
-                     acts.join(" / ") + (pathways ? "<br>" + PM_ACTIVITY_WEDNESDAY_EXTRA : ""));
+                     acts.join("<br>") + (pathways ? "<br>" + PM_ACTIVITY_WEDNESDAY_EXTRA : ""));
       } else if (here.length === 0) {
         html += cell("background:#f0f0f0; color:#555;", "\u2713 Break");
       } else if (here.length === 1) {
@@ -2635,7 +2642,7 @@ function buildIntensive30Schedule(tracks) {
     html += '<div style="margin-top:6px; font-size:10px; color:#777;">';
     if (hasSocial) html += '* Afternoon Social Programme varies by campus.<br>' +
                            '** Pathways Class runs for students on a pathway programme.<br>';
-    if (hasStudy)  html += 'Study Club is optional supervised study.';
+    if (hasStudy)  html += 'Study Club / IEC Workshops is optional supervised study.';
     html += '</div>';
   }
   return html;
@@ -2660,7 +2667,7 @@ function showSchedule() {
       checks.style.display = "none";
       warning.style.display = "none";
       const toggles = document.getElementById("activity-toggles");
-      if (toggles) toggles.style.display = "none";
+      if (toggles) toggles.style.display = "block";
     } else {
       label.textContent = "Elective tracks - tick any combination (A and B by default)";
       radios.style.display = "none";
@@ -3222,6 +3229,14 @@ function showSchedule() {
 
   /* Intensive 30 is drawn from the elective slot map so any mix of A-D works,
      rather than being limited to the two published pairings. */
+  if (prog === "Semi Intensive 26" || prog === "Super Intensive 40") {
+    const pick = document.querySelector('input[name="elective-option"]:checked');
+    const tracks = prog === "Super Intensive 40" ? ["A","B","C","D"] : [pick ? pick.value : "A"];
+    content.innerHTML = buildIntensive30Schedule(tracks, prog);
+    warning.style.display = "none";
+    display.style.display = "block";
+    return;
+  }
   if (prog === "Intensive 30") {
     const tracks = selectedElectives();
     if (!tracks.length) {
