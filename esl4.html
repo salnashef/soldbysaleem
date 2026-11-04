@@ -1603,6 +1603,24 @@ function calculateGeneric(prog) {
   };
 }
 
+/* Course end date: the Friday of the final week of study (free weeks included).
+   A 1-week course starting Monday 9 Nov ends Friday 13 Nov. */
+function courseEndDate(startISO, weeks) {
+  if (!startISO || !(weeks > 0)) return "";
+  const d = new Date(startISO + "T00:00:00");
+  if (isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + (weeks - 1) * 7);
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));   /* forward to Friday */
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), dd = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + dd;
+}
+function formatQuoteDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-CA", { weekday:"short", day:"numeric", month:"long", year:"numeric" });
+}
+
 /* Shared quote header lines, used by screen, PDF, copy HTML and copy text */
 function quoteHeaderRows(d, extra) {
   const hsDur = d.accomWeeks;
@@ -1639,9 +1657,12 @@ function quoteHeaderRows(d, extra) {
       ["Accommodation",     d.accomName + (hsDur > 0 ? " (" + hsDur + " wks)" : "")],
       ["Airport transfer",  d.transferType],
       ["Medical insurance", d.optOutIns ? "Opted out" : "Included"],
-      ["Student type",      d.studentType + (d.supplementFee > 0 ? " (minor supplement applies)" : "")],
-      ["Start date",        document.getElementById("start-date").value]
+      ["Student type",      d.studentType + (d.supplementFee > 0 ? " (minor supplement applies)" : "")]
     );
+    const startISO = document.getElementById("start-date").value;
+    const endISO   = courseEndDate(startISO, totalWeeks);
+    rows.push(["Start date", formatQuoteDate(startISO)]);
+    if (endISO) rows.push(["End date", formatQuoteDate(endISO)]);
   }
   if (d.isExtension) rows.push(["Quote type", "Course extension (enrolment fee waived)"]);
   if (d.fixedRateStart) rows.push(["Course start", d.fixedRateStart]);
