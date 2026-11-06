@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip Countdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #182029;
+    --line: #26303b;
+    --text: #e8edf2;
+    --muted: #8b98a6;
+    --go: #f2a65a;
+    --back: #5ab0f2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    gap: 20px;
+  }
+  h1 { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+  .wrap { width: 100%; max-width: 640px; display: grid; gap: 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--accent);
+  }
+  .go { --accent: var(--go); }
+  .back { --accent: var(--back); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+  .label { font-size: 20px; font-weight: 700; }
+  .date { font-size: 14px; color: var(--muted); }
+  .units { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .unit {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px 6px;
+    text-align: center;
+  }
+  .num { font-family: "JetBrains Mono", monospace; font-size: clamp(28px, 7vw, 44px); font-weight: 700; color: var(--accent); line-height: 1; }
+  .cap { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 8px; }
+  .done { display: none; font-size: 22px; font-weight: 600; color: var(--accent); padding: 18px 0; text-align: center; }
+  .card.finished .units { display: none; }
+  .card.finished .done { display: block; }
+  .bar { height: 6px; background: var(--bg); border-radius: 3px; margin-top: 18px; overflow: hidden; }
+  .fill { height: 100%; background: var(--accent); width: 0; transition: width .5s; }
+  .note { font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Trip Countdown</h1>
+  <div class="wrap">
+    <div class="card go" id="go">
+      <div class="head">
+        <span class="label">Travelling</span>
+        <span class="date">Wednesday, November 18, 2026</span>
+      </div>
+      <div class="units">
+        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
+        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
+        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
+        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
+      </div>
+      <div class="done">Travel day is here. Safe travels.</div>
+    </div>
+
+    <div class="card back" id="back">
+      <div class="head">
+        <span class="label">Coming back</span>
+        <span class="date">Tuesday, November 24, 2026</span>
+      </div>
+      <div class="units">
+        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
+        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
+        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
+        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
+      </div>
+      <div class="done">Welcome home.</div>
+      <div class="bar" title="Trip progress"><div class="fill" id="tripFill"></div></div>
+    </div>
+  </div>
+  <p class="note" id="note">Counting down to midnight Pacific Time on each date &middot; 6-day trip</p>
+
+<script>
+  // Midnight Pacific Standard Time (UTC-8) on each date
+  const GO = new Date("2026-11-18T00:00:00-08:00").getTime();
+  const BACK = new Date("2026-11-24T00:00:00-08:00").getTime();
+  const pad = n => String(n).padStart(2, "0");
+
+  function render(id, target, now) {
+    const card = document.getElementById(id);
+    let diff = target - now;
+    if (diff <= 0) { card.classList.add("finished"); return; }
+    card.classList.remove("finished");
+    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+    const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+    const m = Math.floor(diff / 60000);    diff -= m * 60000;
+    const s = Math.floor(diff / 1000);
+    const vals = { d: String(d), h: pad(h), m: pad(m), s: pad(s) };
+    card.querySelectorAll(".num").forEach(el => { el.textContent = vals[el.dataset.u]; });
+  }
+
+  function tick() {
+    const now = Date.now();
+    render("go", GO, now);
+    render("back", BACK, now);
+    const pct = Math.min(100, Math.max(0, (now - GO) / (BACK - GO) * 100));
+    document.getElementById("tripFill").style.width = pct + "%";
+    if (now >= GO && now < BACK) {
+      document.getElementById("note").textContent = "Trip in progress: " + Math.round(pct) + "% done";
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
