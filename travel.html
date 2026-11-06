@@ -85,7 +85,7 @@
     <div class="card back" id="back">
       <div class="head">
         <span class="label">Coming back</span>
-        <span class="date">Tuesday, November 24, 2026</span>
+        <span class="date">Saturday, November 28, 2026</span>
       </div>
       <div class="units">
         <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
@@ -97,12 +97,12 @@
       <div class="bar" title="Trip progress"><div class="fill" id="tripFill"></div></div>
     </div>
   </div>
-  <p class="note" id="note">Counting down to midnight Pacific Time on each date &middot; 6-day trip</p>
+  <p class="note" id="note">Counting down to midnight Pacific Time on each date &middot; 10-day trip</p>
 
 <script>
   // Midnight Pacific Standard Time (UTC-8) on each date
   const GO = new Date("2026-11-18T00:00:00-08:00").getTime();
-  const BACK = new Date("2026-11-24T00:00:00-08:00").getTime();
+  const BACK = new Date("2026-11-28T00:00:00-08:00").getTime();
   const pad = n => String(n).padStart(2, "0");
 
   function render(id, target, now) {
