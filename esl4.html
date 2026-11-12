@@ -175,6 +175,19 @@
   </div>
 </div>
 
+<div id="promo-wrap" style="display:none; margin-bottom:10px; padding:10px 12px; background:#1f1f1f; border-radius:5px; color:#f2f2f2;">
+  <div class="field-row" style="align-items:end;">
+    <div>
+      <label for="promo-discount" style="color:#f2f2f2;">Promo discount (amount off tuition)</label>
+      <input type="number" id="promo-discount" min="0" step="1" value="0" style="margin-bottom:0;">
+    </div>
+    <div>
+      <button type="button" class="btn" id="promo-apply" onclick="applyPromoSuggestion()" style="margin-bottom:0; background:#f0c419; color:#1f1f1f; font-weight:bold;">Use promo amount</button>
+    </div>
+  </div>
+  <div id="promo-guide" style="margin-top:10px; font-size:12px; line-height:1.6;"></div>
+</div>
+
 <div id="student-type-wrap">
   <label>Student type <span class="field-hint">(minor supplement applies to Canada homestay)</span></label>
   <select id="student-type">
@@ -949,12 +962,73 @@ function handleSchoolChange() {
   updateCampusDropdown();
 }
 
+/* Current onshore promotion. The guide shows the tiers; the sales rep enters
+   the amount (or clicks "Use promo amount"). Tiers are by course length. */
+const PROMO = {
+  name: "Black Promotion",
+  start: "2026-11-16",
+  end:   "2026-11-30",
+  tiers: [               /* minimum weeks -> extra amount off tuition */
+    { weeks:16, amount:200, label:"16-week+ courses" },
+    { weeks:12, amount:150, label:"12-week courses" },
+    { weeks:8,  amount:100, label:"8-week courses" },
+    { weeks:4,  amount:50,  label:"4-week courses" }
+  ]
+};
+function promoTierFor(weeks) {
+  for (let i = 0; i < PROMO.tiers.length; i++) if (weeks >= PROMO.tiers[i].weeks) return PROMO.tiers[i];
+  return null;
+}
+function promoIsActive() {
+  const n = new Date();
+  const today = n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+  return today >= PROMO.start && today <= PROMO.end;
+}
+function promoDateRange() {
+  const f = function(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("en-CA", { month:"short", day:"numeric" }); };
+  return f(PROMO.start) + " - " + f(PROMO.end) + ", " + PROMO.end.slice(0, 4);
+}
+function updatePromoGuide() {
+  const wrap = document.getElementById("promo-wrap");
+  if (!wrap || wrap.style.display === "none") return;
+  const country = document.getElementById("country").value || "Canada";
+  const cur     = country === "USA" ? "USD" : "CAD";
+  const weeks   = parseInt(document.getElementById("duration").value) || 0;
+  const tier    = promoTierFor(weeks);
+  const active  = promoIsActive();
+  let html = '<div style="font-weight:bold; color:#f0c419; margin-bottom:4px;">' + PROMO.name + ' - ' + promoDateRange() +
+             (active ? ' <span style="background:#2e7d32; color:#fff; padding:1px 6px; border-radius:3px; font-size:10px;">ACTIVE</span>'
+                     : ' <span style="background:#777; color:#fff; padding:1px 6px; border-radius:3px; font-size:10px;">NOT ACTIVE TODAY</span>') +
+             '</div><table style="width:100%; min-width:0; margin:0; border-collapse:collapse; font-size:12px;">';
+  PROMO.tiers.slice().reverse().forEach(function(t) {
+    const hit = tier && tier.weeks === t.weeks;
+    const st  = 'border:none; padding:2px 6px; text-align:left;' + (hit ? ' background:#f0c419; color:#1f1f1f; font-weight:bold;' : ' color:#ddd;');
+    html += '<tr><td style="' + st + '">' + cur + ' ' + t.amount + ' extra discount</td><td style="' + st + '">' + t.label + '</td></tr>';
+  });
+  html += '</table><div style="margin-top:6px; color:#bbb; font-size:11px;">' +
+          (tier ? weeks + " weeks qualifies for " + cur + " " + tier.amount + " off tuition."
+                : "Courses under 4 weeks do not qualify.") +
+          ' Taken off tuition after the onshore discount.</div>';
+  document.getElementById("promo-guide").innerHTML = html;
+  const btn = document.getElementById("promo-apply");
+  btn.disabled = !tier;
+  btn.style.opacity = tier ? "1" : "0.5";
+  btn.textContent = tier ? "Use " + cur + " " + tier.amount : "Not eligible";
+}
+function applyPromoSuggestion() {
+  const tier = promoTierFor(parseInt(document.getElementById("duration").value) || 0);
+  document.getElementById("promo-discount").value = tier ? tier.amount : 0;
+}
+
 function updateDiscountVisibility() {
   const cat = document.getElementById("student-category").value;
   const cc  = isCareerCollege();
   const autoOnshore = cat === "onshore" && !cc;
   document.getElementById("discount-container").style.display = "block";
   document.getElementById("onshore-note").style.display       = autoOnshore ? "block" : "none";
+  document.getElementById("promo-wrap").style.display         = (autoOnshore && !isJunior()) ? "block" : "none";
+  if (!autoOnshore) document.getElementById("promo-discount").value = 0;
+  updatePromoGuide();
   const lbl = document.getElementById("discount-label");
   const disc = document.getElementById("discount");
   if (cc) {
@@ -1451,6 +1525,7 @@ function calculateJunior(pkg) {
     tuitionBeforeDiscount:packagePrice, discount:discountInput,
     discountAmount:discountAmount, discountLabel:"Discount (" + discountInput + "%)",
     discountShort:"Discount", extraDiscountPct:0, extraDiscountAmount:0, extraDiscountNote:"",
+    promoDiscountAmount:0, promoNote:"",
     tuitionFinal:tuitionFinal,
     regFee:regFee, matTotal:0, matNote:"", accomName:pkg.accom, accomRate:0,
     accomUnit:"week", accomWeeks:0, billedUnits:0, accomBase:0,
@@ -1519,7 +1594,16 @@ function calculateGeneric(prog) {
     discountLabel = "Tuition discount (" + discount + "%)";
     discountShort = "Discount";
   }
-  const tuitionFinal = tuitionBeforeDiscount - discountAmount - extraDiscountAmount;
+  /* flat promo amount (onshore only), capped so tuition never goes negative */
+  let promoDiscountAmount = 0, promoNote = "";
+  if (pp.onshore) {
+    const promoInput = parseFloat((document.getElementById("promo-discount") || {}).value) || 0;
+    const room = tuitionBeforeDiscount - discountAmount - extraDiscountAmount;
+    promoDiscountAmount = Math.max(0, Math.min(promoInput, room));
+    const tier = promoTierFor(duration);
+    promoNote = PROMO.name + (tier && promoDiscountAmount === tier.amount ? " - " + tier.label : "");
+  }
+  const tuitionFinal = tuitionBeforeDiscount - discountAmount - extraDiscountAmount - promoDiscountAmount;
   const netRate      = duration > 0 ? tuitionFinal / duration : 0;
 
   /* accommodation */
@@ -1587,6 +1671,7 @@ function calculateGeneric(prog) {
     discountLabel:discountLabel, discountShort:discountShort,
     extraDiscountPct:extraDiscountPct, extraDiscountAmount:extraDiscountAmount,
     extraDiscountNote:extraDiscountNote,
+    promoDiscountAmount:promoDiscountAmount, promoNote:promoNote,
     tuitionFinal:tuitionFinal,
     regFee:regFee, matTotal:matTotal, matNote:matNote,
     accomName:accom.name, accomRate:accom.rate, accomUnit:accom.unit, accomWeeks:accomWeeks,
@@ -1696,7 +1781,7 @@ function buildFeeRows(d) {
     add(d.discountLabel, d.discountAmount,
         isSchol ? "Flat award, " + fmtPct(d.discount) + "% of tuition"
                 : fmtPct(d.discount) + "% off regular tuition", true);
-    if (!(d.extraDiscountAmount > 0)) {
+    if (!(d.extraDiscountAmount > 0) && !(d.promoDiscountAmount > 0)) {
       add("Tuition (after " + word + ")", d.tuitionFinal,
           money(d.netRate, d.country) + "/wk" + (d.onshore ? " onshore rate" : ""));
     }
@@ -1704,6 +1789,11 @@ function buildFeeRows(d) {
   if (d.extraDiscountAmount > 0) {
     add("Extra discount (" + fmtPct(d.extraDiscountPct) + "%)",
         d.extraDiscountAmount, d.extraDiscountNote, true);
+  }
+  if (d.promoDiscountAmount > 0) {
+    add("Promo discount", d.promoDiscountAmount, d.promoNote, true);
+  }
+  if (d.extraDiscountAmount > 0 || d.promoDiscountAmount > 0) {
     add("Tuition (after discounts)", d.tuitionFinal,
         money(d.netRate, d.country) + "/wk net");
   }
@@ -1789,6 +1879,7 @@ const comparisonRows = [
   { label:"Tuition (before discount)", key:"tuitionBeforeDiscount" },
   { label:"Discount",                  key:"discountAmount", negative:true },
   { label:"Extra discount",            key:"extraDiscountAmount", negative:true },
+  { label:"Promo discount",            key:"promoDiscountAmount", negative:true },
   { label:"Tuition (after discount)",  key:"tuitionFinal" },
   { label:"Registration",              key:"regFee" },
   { label:"Materials",                 key:"matTotal" },
@@ -2425,6 +2516,7 @@ function clearForm() {
   const country = document.getElementById("country").value || "Canada";
   document.getElementById("duration").value          = DEFAULT_WEEKS;
   document.getElementById("discount").value          = 0;
+  document.getElementById("promo-discount").value    = 0;
   document.getElementById("homestay-duration").value = 0;
   document.getElementById("homestay-type").value     = "No Accommodation";
   document.getElementById("transfer-type").value     = "No Transfer";
@@ -3539,6 +3631,21 @@ const campusExtras = {
   }
 };
 
+/* English course brochure linked from the template email (all campuses) */
+const ENGLISH_BROCHURE = {
+  label:"OI Global Adult English Brochure 2027",
+  url:"https://marketing-portal.oxfordinternational.com/?sdm_process_download=1&download_id=7754"
+};
+function brochureHTML() {
+  return '<h3 style="margin:15px 0 10px 0; color:#333;">Our Brochure</h3>' +
+         '<p style="margin:6px 0;">Download the <a href="' + ENGLISH_BROCHURE.url.replace(/&/g, "&amp;") +
+         '" target="_blank"><strong>' + ENGLISH_BROCHURE.label + '</strong></a> for full course, campus and accommodation details.</p>';
+}
+function brochureText() {
+  return "OUR BROCHURE\n\nDownload the " + ENGLISH_BROCHURE.label + " for full course, campus and accommodation details:\n" +
+         ENGLISH_BROCHURE.url + "\n\n";
+}
+
 function campusExtrasHTML(campus) {
   const x = campusExtras[campus];
   if (!x) return "";
@@ -3802,6 +3909,8 @@ function showTemplateEmail() {
       
       ${scheduleSection}
       
+      ${brochureHTML()}
+
       ${campusMediaBlock}
 
       <h3 style="margin:15px 0 10px 0; color:#333;">How to Enroll - 7 Easy Steps</h3>
@@ -3979,7 +4088,7 @@ ${info.address}
 
 ${quotationText}
 
-${campusMediaText}
+${brochureText()}${campusMediaText}
 HOW TO ENROLL - 7 EASY STEPS
 
 1. Fill out the Application form (https://forms.iqschools.net/oieg/Application) and read our School Policies (https://www.oxfordinternationalenglish.com/useful-information/school-policies/)
@@ -4142,6 +4251,10 @@ function copyRichEmail(plainText) {
    INIT
    ========================================================================= */
 document.addEventListener("DOMContentLoaded", function() {
+  ["duration","country","campus","student-category"].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) { el.addEventListener("input", updatePromoGuide); el.addEventListener("change", updatePromoGuide); }
+  });
   const today = new Date();
   const day   = today.getDay();
   const daysUntilMon = (1 - day + 7) % 7 || 7;
