@@ -1008,7 +1008,7 @@ function updatePromoGuide() {
   html += '</table><div style="margin-top:6px; color:#bbb; font-size:11px;">' +
           (tier ? weeks + " weeks qualifies for " + cur + " " + tier.amount + " off tuition."
                 : "Courses under 4 weeks do not qualify.") +
-          ' Taken off tuition after the onshore discount.</div>';
+          ' Taken off tuition after any other discount.</div>';
   document.getElementById("promo-guide").innerHTML = html;
   const btn = document.getElementById("promo-apply");
   btn.disabled = !tier;
@@ -1026,8 +1026,9 @@ function updateDiscountVisibility() {
   const autoOnshore = cat === "onshore" && !cc;
   document.getElementById("discount-container").style.display = "block";
   document.getElementById("onshore-note").style.display       = autoOnshore ? "block" : "none";
-  document.getElementById("promo-wrap").style.display         = (autoOnshore && !isJunior()) ? "block" : "none";
-  if (!autoOnshore) document.getElementById("promo-discount").value = 0;
+  const promoOn = !cc && !isJunior();   /* English courses, onshore and offshore */
+  document.getElementById("promo-wrap").style.display         = promoOn ? "block" : "none";
+  if (!promoOn) document.getElementById("promo-discount").value = 0;
   updatePromoGuide();
   const lbl = document.getElementById("discount-label");
   const disc = document.getElementById("discount");
@@ -1594,9 +1595,9 @@ function calculateGeneric(prog) {
     discountLabel = "Tuition discount (" + discount + "%)";
     discountShort = "Discount";
   }
-  /* flat promo amount (onshore only), capped so tuition never goes negative */
+  /* flat promo amount (English courses, onshore and offshore), capped so tuition never goes negative */
   let promoDiscountAmount = 0, promoNote = "";
-  if (pp.onshore) {
+  if (!ccProg) {
     const promoInput = parseFloat((document.getElementById("promo-discount") || {}).value) || 0;
     const room = tuitionBeforeDiscount - discountAmount - extraDiscountAmount;
     promoDiscountAmount = Math.max(0, Math.min(promoInput, room));
