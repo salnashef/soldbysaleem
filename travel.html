@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><!DOCTYPE html>
-<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,8 +13,6 @@
     --line: #26303b;
     --text: #e8edf2;
     --muted: #8b98a6;
-    --go: #f2a65a;
-    --back: #5ab0f2;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -27,17 +23,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 32px 16px;
-    gap: 20px;
+    padding: 28px 16px 40px;
+    gap: 16px;
   }
-  h1 { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-  .wrap { width: 100%; max-width: 640px; display: grid; gap: 16px; }
+  h1, h2 { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  h2 { margin-top: 8px; }
+  .wrap { width: 100%; max-width: 640px; display: grid; gap: 12px; }
   .card {
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: 16px;
-    padding: 24px;
+    padding: 18px 18px 18px 24px;
     position: relative;
     overflow: hidden;
   }
@@ -45,133 +41,145 @@
     content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
     background: var(--accent);
   }
-  .go { --accent: var(--go); }
-  .back { --accent: var(--back); }
-  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
-  .label { font-size: 20px; font-weight: 700; }
-  .date { font-size: 14px; color: var(--muted); }
-  .units { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .head { margin-bottom: 12px; }
+  .label { font-size: 17px; font-weight: 700; display: block; }
+  .date { font-size: 12px; color: var(--muted); margin-top: 3px; display: block; }
+  .units { display: flex; gap: 6px; }
   .unit {
+    flex: 1;
     background: var(--bg);
     border-radius: 10px;
-    padding: 14px 6px;
+    padding: 10px 4px;
     text-align: center;
+    min-width: 0;
   }
-  .num { font-family: "JetBrains Mono", monospace; font-size: clamp(28px, 7vw, 44px); font-weight: 700; color: var(--accent); line-height: 1; }
-  .cap { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 8px; }
-  .done { display: none; font-size: 22px; font-weight: 600; color: var(--accent); padding: 18px 0; text-align: center; }
+  .unit[hidden] { display: none; }
+  .num { font-family: "JetBrains Mono", monospace; font-size: clamp(20px, 6vw, 34px); font-weight: 700; color: var(--accent); line-height: 1; }
+  .cap { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 6px; }
+  .done { display: none; font-size: 20px; font-weight: 600; color: var(--accent); padding: 12px 0; text-align: center; }
   .card.finished .units { display: none; }
   .card.finished .done { display: block; }
-  .bar { height: 6px; background: var(--bg); border-radius: 3px; margin-top: 18px; overflow: hidden; }
-  .fill { height: 100%; background: var(--accent); width: 0; transition: width .5s; }
-  .note { font-size: 12px; color: var(--muted); text-align: center; }
   .snap {
     font: 600 14px Inter, system-ui, sans-serif;
     background: var(--text); color: var(--bg);
-    border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer;
+    border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer; margin-top: 8px;
   }
   .overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.85);
+    position: fixed; inset: 0; background: rgba(0,0,0,.88);
     display: none; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 20px; z-index: 10;
   }
   .overlay.show { display: flex; }
-  .overlay img { max-width: 100%; max-height: 75vh; border-radius: 12px; -webkit-touch-callout: default; user-select: auto; }
+  .overlay img { max-width: 100%; max-height: 78vh; border-radius: 12px; -webkit-touch-callout: default; user-select: auto; }
   .overlay p { color: var(--text); font-size: 14px; text-align: center; }
   .overlay button { font: 500 14px Inter, sans-serif; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; cursor: pointer; }
-  @media (max-width: 480px) {
-    body { padding: 20px 12px; gap: 14px; justify-content: flex-start; }
-    .card { padding: 16px 16px 16px 20px; }
-    .head { margin-bottom: 12px; }
-    .label { font-size: 17px; }
-    .date { font-size: 12px; }
-    .unit { padding: 10px 4px; }
-    .units { gap: 6px; }
-  }
 </style>
 </head>
 <body>
-  <h1>Trip Countdown</h1>
-  <div class="wrap">
-    <div class="card go" id="go">
-      <div class="head">
-        <span class="label">Travelling</span>
-        <span class="date">Wednesday, November 18, 2026</span>
-      </div>
-      <div class="units">
-        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
-        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
-        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
-        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
-      </div>
-      <div class="done">Travel day is here. Safe travels.</div>
-    </div>
+  <h1>Countdown</h1>
+  <div class="wrap" id="countdowns"></div>
 
-    <div class="card back" id="back">
-      <div class="head">
-        <span class="label">Coming back</span>
-        <span class="date">Saturday, November 28, 2026</span>
-      </div>
-      <div class="units">
-        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
-        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
-        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
-        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
-      </div>
-      <div class="done">Welcome home.</div>
-      <div class="bar" title="Trip progress"><div class="fill" id="tripFill"></div></div>
-    </div>
-  </div>
-  <p class="note" id="note">Counting down to midnight Pacific Time on each date &middot; 10-day trip</p>
+  <h2>Counting up</h2>
+  <div class="wrap" id="countups"></div>
+
   <button class="snap" id="snapBtn" type="button">Save as image</button>
 
   <div class="overlay" id="overlay">
-    <img id="snapImg" alt="Trip countdown snapshot">
+    <img id="snapImg" alt="Countdown snapshot">
     <p>Press and hold the image (or right-click) to save or share it.</p>
     <button type="button" id="closeBtn">Close</button>
   </div>
 
 <script>
-  // Midnight Pacific Standard Time (UTC-8) on each date
-  const GO = new Date("2026-11-18T00:00:00-08:00").getTime();
-  const BACK = new Date("2026-11-28T00:00:00-08:00").getTime();
+  // Times carry their own UTC offset.
+  // Pacific dates in October are on daylight time (UTC-7); Nov 18 is standard time (UTC-8).
+  // Amman in Sep/Oct 2006 and 2008 was on summer time (UTC+3).
+  const ITEMS = [
+    { id: "trip", type: "down", accent: "#f2a65a", label: "Travelling",
+      date: "Wednesday, November 18, 2026", at: "2026-11-18T00:00:00-08:00",
+      done: "Travel day is here. Safe travels." },
+    { id: "herback", type: "down", flip: true, accent: "#5ab0f2", label: "She comes back from travelling",
+      afterLabel: "Since she came back from travelling",
+      date: "Saturday, November 28, 2026", at: "2026-11-28T00:00:00-08:00" },
+
+    { id: "saw", type: "up", accent: "#e8b84a", label: "First time I saw her in my life",
+      date: "October 4, 2006 · 11:00 AM", at: "2006-10-04T11:00:00+03:00" },
+    { id: "met", type: "up", accent: "#5ac8b0", label: "First time I met her in person",
+      date: "September 23, 2008 · 1:53 PM Amman time", at: "2008-09-23T13:53:00+03:00" },
+    { id: "dream", type: "up", accent: "#9b8cf2", label: "Had a dream and decided to connect with her",
+      date: "October 5, 2026 · 4:02 AM Pacific", at: "2026-10-05T04:02:00-07:00" },
+    { id: "love", type: "up", accent: "#f27a9b", label: "First time I said I love you",
+      date: "October 20, 2026 · 1:51 PM Pacific", at: "2026-10-20T13:51:00-07:00" }
+  ];
+  ITEMS.forEach(it => it.t = new Date(it.at).getTime());
+
   const pad = n => String(n).padStart(2, "0");
 
-  function render(id, target, now) {
-    const card = document.getElementById(id);
-    let diff = target - now;
-    if (diff <= 0) { card.classList.add("finished"); return; }
-    card.classList.remove("finished");
-    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
-    const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
-    const m = Math.floor(diff / 60000);    diff -= m * 60000;
+  // Calendar-aware breakdown between two timestamps (a < b)
+  function breakdown(a, b) {
+    const A = new Date(a);
+    let years = 0;
+    while (true) {
+      const next = new Date(A); next.setFullYear(A.getFullYear() + years + 1);
+      if (next.getTime() <= b) years++; else break;
+    }
+    const base = new Date(A); base.setFullYear(A.getFullYear() + years);
+    let diff = b - base.getTime();
+    const days = Math.floor(diff / 86400000); diff -= days * 86400000;
+    const h = Math.floor(diff / 3600000);    diff -= h * 3600000;
+    const m = Math.floor(diff / 60000);      diff -= m * 60000;
     const s = Math.floor(diff / 1000);
-    const vals = { d: String(d), h: pad(h), m: pad(m), s: pad(s) };
-    card.querySelectorAll(".num").forEach(el => { el.textContent = vals[el.dataset.u]; });
+    return { years, days, h, m, s };
+  }
+
+  function build() {
+    const units = [["y","Years"],["d","Days"],["h","Hours"],["m","Min"],["s","Sec"]];
+    ITEMS.forEach(it => {
+      const card = document.createElement("div");
+      card.className = "card"; card.id = it.id;
+      card.style.setProperty("--accent", it.accent);
+      card.innerHTML =
+        '<div class="head"><span class="label"></span><span class="date"></span></div>' +
+        '<div class="units">' + units.map(([k, c]) =>
+          '<div class="unit" data-k="' + k + '"><div class="num">--</div><div class="cap">' + c + '</div></div>').join("") +
+        '</div>' + (it.done ? '<div class="done"></div>' : "");
+      card.querySelector(".label").textContent = it.label;
+      card.querySelector(".date").textContent = it.date;
+      if (it.done) card.querySelector(".done").textContent = it.done;
+      document.getElementById(it.type === "down" ? "countdowns" : "countups").appendChild(card);
+    });
+  }
+
+  function values(it, now) {
+    if (it.type === "down") {
+      if (now >= it.t) return it.flip ? breakdown(it.t, now) : null;
+      return breakdown(now, it.t);
+    }
+    return breakdown(it.t, now);
   }
 
   function tick() {
     const now = Date.now();
-    render("go", GO, now);
-    render("back", BACK, now);
-    const pct = Math.min(100, Math.max(0, (now - GO) / (BACK - GO) * 100));
-    document.getElementById("tripFill").style.width = pct + "%";
-    if (now >= GO && now < BACK) {
-      document.getElementById("note").textContent = "Trip in progress: " + Math.round(pct) + "% done";
-    }
+    ITEMS.forEach(it => {
+      const card = document.getElementById(it.id);
+      const v = values(it, now);
+      if (!v) { card.classList.add("finished"); return; }
+      card.classList.remove("finished");
+      if (it.afterLabel) card.querySelector(".label").textContent = now >= it.t ? it.afterLabel : it.label;
+      const map = { y: String(v.years), d: String(v.days), h: pad(v.h), m: pad(v.m), s: pad(v.s) };
+      card.querySelectorAll(".unit").forEach(u => {
+        const k = u.dataset.k;
+        u.hidden = (k === "y" && v.years === 0);
+        u.querySelector(".num").textContent = map[k];
+      });
+    });
   }
+
+  build();
   tick();
   setInterval(tick, 1000);
 
-  // ---- Snapshot to image ----
-  function parts(target, now) {
-    let diff = Math.max(0, target - now);
-    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
-    const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
-    const m = Math.floor(diff / 60000);
-    return { done: target - now <= 0, vals: [String(d), pad(h), pad(m)] };
-  }
-
+  // ---- Snapshot to image (phone story size) ----
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -182,55 +190,66 @@
     ctx.closePath();
   }
 
-  function drawCard(ctx, x, y, w, h, accent, label, date, target, now, doneText) {
-    ctx.fillStyle = "#182029"; roundRect(ctx, x, y, w, h, 28); ctx.fill();
+  function fitText(ctx, text, maxW, size, weight) {
+    let s = size;
+    do { ctx.font = weight + " " + s + "px Inter, system-ui, sans-serif"; s -= 1; }
+    while (ctx.measureText(text).width > maxW && s > 18);
+  }
+
+  function drawCard(ctx, x, y, w, h, it, now) {
+    ctx.fillStyle = "#182029"; roundRect(ctx, x, y, w, h, 26); ctx.fill();
     ctx.strokeStyle = "#26303b"; ctx.lineWidth = 2; ctx.stroke();
-    ctx.save(); roundRect(ctx, x, y, w, h, 28); ctx.clip();
-    ctx.fillStyle = accent; ctx.fillRect(x, y, 8, h); ctx.restore();
+    ctx.save(); roundRect(ctx, x, y, w, h, 26); ctx.clip();
+    ctx.fillStyle = it.accent; ctx.fillRect(x, y, 8, h); ctx.restore();
 
-    ctx.fillStyle = "#e8edf2"; ctx.font = "700 38px Inter, system-ui, sans-serif";
     ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-    ctx.fillText(label, x + 44, y + 70);
-    ctx.fillStyle = "#8b98a6"; ctx.font = "400 26px Inter, system-ui, sans-serif";
-    ctx.fillText(date, x + 44, y + 110);
+    const label = (it.afterLabel && now >= it.t) ? it.afterLabel : it.label;
+    ctx.fillStyle = "#e8edf2"; fitText(ctx, label, w - 80, 34, "700");
+    ctx.fillText(label, x + 40, y + 56);
+    ctx.fillStyle = "#8b98a6"; ctx.font = "400 22px Inter, system-ui, sans-serif";
+    ctx.fillText(it.date, x + 40, y + 90);
 
-    const p = parts(target, now);
-    if (p.done) {
-      ctx.fillStyle = accent; ctx.font = "600 40px Inter, system-ui, sans-serif";
-      ctx.textAlign = "center"; ctx.fillText(doneText, x + w / 2, y + 220);
+    const v = values(it, now);
+    if (!v) {
+      ctx.fillStyle = it.accent; ctx.font = "600 36px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.fillText(it.done, x + w / 2, y + 180);
       return;
     }
-    const caps = ["DAYS", "HOURS", "MINUTES"];
-    const gap = 20, bx = x + 44, bw = (w - 88 - gap * 2) / 3, by = y + 140, bh = 150;
-    for (let i = 0; i < 3; i++) {
+    const all = [[String(v.years),"YEARS"],[String(v.days),"DAYS"],[pad(v.h),"HOURS"],[pad(v.m),"MIN"]];
+    const cells = v.years > 0 ? all : all.slice(1);
+    const gap = 16, bx = x + 40, bw = (w - 80 - gap * (cells.length - 1)) / cells.length, by = y + 112, bh = 124;
+    cells.forEach(([num, cap], i) => {
       const cx = bx + i * (bw + gap);
-      ctx.fillStyle = "#0f1419"; roundRect(ctx, cx, by, bw, bh, 18); ctx.fill();
-      ctx.fillStyle = accent; ctx.font = "700 72px 'JetBrains Mono', monospace";
-      ctx.textAlign = "center"; ctx.fillText(p.vals[i], cx + bw / 2, by + 88);
-      ctx.fillStyle = "#8b98a6"; ctx.font = "500 20px Inter, system-ui, sans-serif";
-      ctx.fillText(caps[i], cx + bw / 2, by + 126);
-    }
+      ctx.fillStyle = "#0f1419"; roundRect(ctx, cx, by, bw, bh, 16); ctx.fill();
+      ctx.fillStyle = it.accent; ctx.font = "700 58px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center"; ctx.fillText(num, cx + bw / 2, by + 72);
+      ctx.fillStyle = "#8b98a6"; ctx.font = "500 18px Inter, system-ui, sans-serif";
+      ctx.fillText(cap, cx + bw / 2, by + 104);
+    });
   }
 
   function makeSnapshot() {
-    const W = 1080, H = 1080, now = Date.now();
+    const W = 1080, H = 1920, now = Date.now();
     const c = document.createElement("canvas"); c.width = W; c.height = H;
     const ctx = c.getContext("2d");
     ctx.fillStyle = "#0f1419"; ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = "#8b98a6"; ctx.font = "500 28px Inter, system-ui, sans-serif";
-    ctx.textAlign = "center"; ctx.fillText("TRIP COUNTDOWN", W / 2, 110);
+    const cardH = 250, gap = 22, x = 60, w = W - 120;
+    let y = 120;
+    ctx.fillStyle = "#8b98a6"; ctx.font = "500 26px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.fillText("COUNTDOWN", W / 2, y - 30);
+    const downs = ITEMS.filter(i => i.type === "down"), ups = ITEMS.filter(i => i.type === "up");
+    downs.forEach(it => { drawCard(ctx, x, y, w, cardH, it, now); y += cardH + gap; });
 
-    drawCard(ctx, 70, 160, W - 140, 340, "#f2a65a", "Travelling", "Wednesday, November 18, 2026", GO, now, "Travel day is here. Safe travels.");
-    drawCard(ctx, 70, 540, W - 140, 340, "#5ab0f2", "Coming back", "Saturday, November 28, 2026", BACK, now, "Welcome home.");
-
-    const pct = Math.min(1, Math.max(0, (now - GO) / (BACK - GO)));
-    ctx.fillStyle = "#182029"; roundRect(ctx, 70, 920, W - 140, 12, 6); ctx.fill();
-    if (pct > 0) { ctx.fillStyle = "#5ab0f2"; roundRect(ctx, 70, 920, (W - 140) * pct, 12, 6); ctx.fill(); }
+    y += 50;
+    ctx.fillStyle = "#8b98a6"; ctx.font = "500 26px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.fillText("COUNTING UP", W / 2, y - 30);
+    ups.forEach(it => { drawCard(ctx, x, y, w, cardH, it, now); y += cardH + gap; });
 
     ctx.fillStyle = "#8b98a6"; ctx.font = "400 22px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
     const stamp = new Date(now).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" });
-    ctx.fillText("10-day trip  ·  as of " + stamp, W / 2, 990);
+    ctx.fillText("As of " + stamp, W / 2, H - 50);
 
     document.getElementById("snapImg").src = c.toDataURL("image/png");
     document.getElementById("overlay").classList.add("show");
@@ -242,139 +261,6 @@
   document.getElementById("closeBtn").addEventListener("click", () => {
     document.getElementById("overlay").classList.remove("show");
   });
-</script>
-</body>
-</html>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trip Countdown</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f1419;
-    --card: #182029;
-    --line: #26303b;
-    --text: #e8edf2;
-    --muted: #8b98a6;
-    --go: #f2a65a;
-    --back: #5ab0f2;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: Inter, system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 16px;
-    gap: 20px;
-  }
-  h1 { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-  .wrap { width: 100%; max-width: 640px; display: grid; gap: 16px; }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .card::before {
-    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    background: var(--accent);
-  }
-  .go { --accent: var(--go); }
-  .back { --accent: var(--back); }
-  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
-  .label { font-size: 20px; font-weight: 700; }
-  .date { font-size: 14px; color: var(--muted); }
-  .units { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .unit {
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 14px 6px;
-    text-align: center;
-  }
-  .num { font-family: "JetBrains Mono", monospace; font-size: clamp(28px, 7vw, 44px); font-weight: 700; color: var(--accent); line-height: 1; }
-  .cap { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 8px; }
-  .done { display: none; font-size: 22px; font-weight: 600; color: var(--accent); padding: 18px 0; text-align: center; }
-  .card.finished .units { display: none; }
-  .card.finished .done { display: block; }
-  .bar { height: 6px; background: var(--bg); border-radius: 3px; margin-top: 18px; overflow: hidden; }
-  .fill { height: 100%; background: var(--accent); width: 0; transition: width .5s; }
-  .note { font-size: 12px; color: var(--muted); text-align: center; }
-</style>
-</head>
-<body>
-  <h1>Trip Countdown</h1>
-  <div class="wrap">
-    <div class="card go" id="go">
-      <div class="head">
-        <span class="label">Travelling</span>
-        <span class="date">Wednesday, November 18, 2026</span>
-      </div>
-      <div class="units">
-        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
-        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
-        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
-        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
-      </div>
-      <div class="done">Travel day is here. Safe travels.</div>
-    </div>
-
-    <div class="card back" id="back">
-      <div class="head">
-        <span class="label">Coming back</span>
-        <span class="date">Saturday, November 28, 2026</span>
-      </div>
-      <div class="units">
-        <div class="unit"><div class="num" data-u="d">--</div><div class="cap">Days</div></div>
-        <div class="unit"><div class="num" data-u="h">--</div><div class="cap">Hours</div></div>
-        <div class="unit"><div class="num" data-u="m">--</div><div class="cap">Minutes</div></div>
-        <div class="unit"><div class="num" data-u="s">--</div><div class="cap">Seconds</div></div>
-      </div>
-      <div class="done">Welcome home.</div>
-      <div class="bar" title="Trip progress"><div class="fill" id="tripFill"></div></div>
-    </div>
-  </div>
-  <p class="note" id="note">Counting down to midnight Pacific Time on each date &middot; 10-day trip</p>
-
-<script>
-  // Midnight Pacific Standard Time (UTC-8) on each date
-  const GO = new Date("2026-11-18T00:00:00-08:00").getTime();
-  const BACK = new Date("2026-11-28T00:00:00-08:00").getTime();
-  const pad = n => String(n).padStart(2, "0");
-
-  function render(id, target, now) {
-    const card = document.getElementById(id);
-    let diff = target - now;
-    if (diff <= 0) { card.classList.add("finished"); return; }
-    card.classList.remove("finished");
-    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
-    const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
-    const m = Math.floor(diff / 60000);    diff -= m * 60000;
-    const s = Math.floor(diff / 1000);
-    const vals = { d: String(d), h: pad(h), m: pad(m), s: pad(s) };
-    card.querySelectorAll(".num").forEach(el => { el.textContent = vals[el.dataset.u]; });
-  }
-
-  function tick() {
-    const now = Date.now();
-    render("go", GO, now);
-    render("back", BACK, now);
-    const pct = Math.min(100, Math.max(0, (now - GO) / (BACK - GO) * 100));
-    document.getElementById("tripFill").style.width = pct + "%";
-    if (now >= GO && now < BACK) {
-      document.getElementById("note").textContent = "Trip in progress: " + Math.round(pct) + "% done";
-    }
-  }
-  tick();
-  setInterval(tick, 1000);
 </script>
 </body>
 </html>
