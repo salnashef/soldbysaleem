@@ -108,8 +108,10 @@
       date: "September 23, 2008 · 1:53 PM Amman time", at: "2008-09-23T13:53:00+03:00" },
     { id: "dream", type: "up", accent: "#9b8cf2", label: "Had a dream and decided to connect with her",
       date: "October 5, 2026 · 4:02 AM Pacific", at: "2026-10-05T04:02:00-07:00" },
-    { id: "love", type: "up", accent: "#f27a9b", label: "First time I said I love you",
-      date: "October 20, 2026 · 1:51 PM Pacific", at: "2026-10-20T13:51:00-07:00" }
+    { id: "love", type: "up", accent: "#f27a9b", label: "I ❤️",
+      date: "October 20, 2026 · 1:51 PM Pacific", at: "2026-10-20T13:51:00-07:00" },
+    { id: "loveback", type: "up", accent: "#f2a0c8", label: "She ❤️",
+      date: "October 21, 2026 · 3:38 PM Pacific", at: "2026-10-21T15:38:00-07:00" }
   ];
   ITEMS.forEach(it => it.t = new Date(it.at).getTime());
 
@@ -229,12 +231,12 @@
   }
 
   function makeSnapshot() {
-    const W = 1080, H = 1920, now = Date.now();
+    const cardH = 250, gap = 22, x = 60, W = 1080, w = W - 120, now = Date.now();
+    const H = Math.max(1920, 120 + ITEMS.length * (cardH + gap) + 50 + 140);
     const c = document.createElement("canvas"); c.width = W; c.height = H;
     const ctx = c.getContext("2d");
     ctx.fillStyle = "#0f1419"; ctx.fillRect(0, 0, W, H);
 
-    const cardH = 250, gap = 22, x = 60, w = W - 120;
     let y = 120;
     ctx.fillStyle = "#8b98a6"; ctx.font = "500 26px Inter, system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.fillText("COUNTDOWN", W / 2, y - 30);
