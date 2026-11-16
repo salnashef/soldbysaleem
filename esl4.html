@@ -965,7 +965,7 @@ function handleSchoolChange() {
 /* Current onshore promotion. The guide shows the tiers; the sales rep enters
    the amount (or clicks "Use promo amount"). Tiers are by course length. */
 const PROMO = {
-  name: "Black Promotion",
+  name: "Black Friday Promotion",
   start: "2026-11-16",
   end:   "2026-11-30",
   tiers: [               /* minimum weeks -> extra amount off tuition */
@@ -3917,9 +3917,9 @@ function showTemplateEmail() {
       <h3 style="margin:15px 0 10px 0; color:#333;">How to Enroll - 7 Easy Steps</h3>
       <ol style="margin:10px 0; padding-left:20px;">
         <li>Fill out the <a href="https://forms.iqschools.net/oieg/Application" target="_blank">Application form</a> and read our <a href="https://www.oxfordinternationalenglish.com/useful-information/school-policies/" target="_blank">School Policies</a></li>
-        <li>Pay the <strong>non-refundable enrolment fee of ${money(registrationFees[country], country)}</strong> via <a href="${info.flywire}" target="_blank">Flywire</a></li>
+        <li>Pay the <strong>non-refundable enrolment fee of ${money(registrationFees[country], country)}</strong> via <a href="${info.flywire}" target="_blank">Flywire</a>${campusPayBlock ? " or the payment information below" : ""}</li>
         <li>We will issue your invoice and Letter of Acceptance (LOA)</li>
-        <li>Complete your full payment via <a href="${info.flywire}" target="_blank">Flywire</a></li>
+        <li>Complete your full payment via <a href="${info.flywire}" target="_blank">Flywire</a>${campusPayBlock ? " or the payment information below" : ""}</li>
         <li>If applicable, share your visa photocopy with our admissions team</li>
         <li>Once you've paid in full and provided your flight information, we will issue your homestay and airport confirmation</li>
         <li>Your welcome letter will be sent the Wednesday before your starting date</li>
@@ -4094,11 +4094,11 @@ HOW TO ENROLL - 7 EASY STEPS
 
 1. Fill out the Application form (https://forms.iqschools.net/oieg/Application) and read our School Policies (https://www.oxfordinternationalenglish.com/useful-information/school-policies/)
 
-2. Pay the non-refundable enrolment fee of ${money(registrationFees[country], country)} via Flywire (${info.flywire})
+2. Pay the non-refundable enrolment fee of ${money(registrationFees[country], country)} via Flywire (${info.flywire})${campusPayText ? " or the payment information below" : ""}
 
 3. We will issue your invoice and Letter of Acceptance (LOA)
 
-4. Complete your full payment via Flywire (${info.flywire})
+4. Complete your full payment via Flywire (${info.flywire})${campusPayText ? " or the payment information below" : ""}
 
 5. If applicable, share your visa photocopy with our admissions team
 
