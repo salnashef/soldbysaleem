@@ -326,7 +326,10 @@
   </div>
   <label>Email</label>
   <input type="email" id="rep-email" placeholder="LanguageAdmissions@oxfordinternational.com (default)" value="">
-
+  <div class="btn-grid-2" style="margin-top:2px;">
+    <button type="button" class="btn btn-purple" onclick="fillMyDetails()">Saleem</button>
+    <button type="button" class="btn btn-clear" onclick="clearMyDetails()">Clear details</button>
+  </div>
 </div>
 
 <div class="btn-grid-2" style="margin-top:15px;">
@@ -3693,6 +3696,21 @@ function campusExtrasText(campus) {
     x.bank.forEach(function(row) { out += "  " + (row[0] + ":").padEnd(18) + row[1] + "\n"; });
   }
   return out;
+}
+
+/* Saved sales rep details, filled in by the "Your details" button. */
+const MY_DETAILS = {
+  name:  "Saleem Nashef",
+  title: "Divisional Sales Manager",
+  email: "salnashef@oxfordinternational.com"
+};
+function fillMyDetails() {
+  document.getElementById("rep-name").value  = MY_DETAILS.name;
+  document.getElementById("rep-title").value = MY_DETAILS.title;
+  document.getElementById("rep-email").value = MY_DETAILS.email;
+}
+function clearMyDetails() {
+  ["rep-name","rep-title","rep-email"].forEach(function(id){ document.getElementById(id).value = ""; });
 }
 
 function getRepDetails() {
