@@ -329,6 +329,11 @@
   <div id="schedule-content" style="background:#f5f5f5; padding:15px; border-radius:5px; margin-top:10px; font-size:12px; line-height:1.8; border-left: 4px solid #0077cc;"></div>
 </div>
 
+<div style="margin-top:15px; padding:12px; background:#f0f8ff; border-radius:5px; border-left:4px solid #0077cc;">
+  <label for="student-name">Student name <span class="field-hint">(used in the template email greeting)</span></label>
+  <input type="text" id="student-name" placeholder="e.g. Ahmed Hassan" value="" style="width:100%; padding:9px 10px; border-radius:5px; border:1px solid #ccc; margin-bottom:0; background-color:#f9f9f9; color:#333; font-size:13px;">
+</div>
+
 <div style="margin-top:15px; padding:12px; background:#f0f8ff; border-radius:5px; border-left:4px solid #7F77DD;">
   <label style="margin-bottom:8px;">Your details <span class="field-hint">(used in the template email signature)</span></label>
   <div class="field-row">
@@ -2710,6 +2715,7 @@ function clearForm() {
   document.getElementById("duration").value          = DEFAULT_WEEKS;
   document.getElementById("discount").value          = 0;
   document.getElementById("promo-discount").value    = 0;
+  document.getElementById("student-name").value      = "";
   document.getElementById("student-count").value     = "1";
   document.getElementById("group-mode").value        = "same";
   renderGroupStudents();
@@ -3906,6 +3912,15 @@ function clearMyDetails() {
   ["rep-name","rep-title","rep-email"].forEach(function(id){ document.getElementById(id).value = ""; });
 }
 
+/* Greeting name for the template email: the typed name, or "Student" */
+function studentGreetingName() {
+  const n = ((document.getElementById("student-name") || {}).value || "").trim();
+  return n || "Student";
+}
+function escapeHTML(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function getRepDetails() {
   var n = (document.getElementById("rep-name") || {}).value || "";
   var t = (document.getElementById("rep-title") || {}).value || "";
@@ -4130,7 +4145,7 @@ function showTemplateEmail() {
     <div id="email-body" style="background:#f0f8ff; padding:15px; border-radius:5px; margin:20px 0; max-height:800px; overflow-y:auto; font-size:12px; line-height:1.6;">
       <p style="font-weight:normal;">Subject: Your Personalized English Program Quotation</p>
       
-      <p style="font-weight:normal;">Dear Student,</p>
+      <p style="font-weight:normal;">Dear ${escapeHTML(studentGreetingName())},</p>
       
       <p style="font-weight:normal;">Thank you for your interest in Oxford International English Schools ${campus}. We're excited to welcome you to our community of learners from around the world. With over 34 years of language education excellence, we've perfected our approach to help you achieve your English goals faster and more effectively.</p>
       
@@ -4344,7 +4359,7 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
   
   const text = `Subject: Your Personalized English Program Quotation
 
-Dear Student,
+Dear ${studentGreetingName()},
 
 Thank you for your interest in Oxford International English Schools ${campus}. We're excited to welcome you to our community of learners from around the world. With over 34 years of language education excellence, we've perfected our approach to help you achieve your English goals faster and more effectively.
 
