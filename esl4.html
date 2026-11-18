@@ -140,6 +140,23 @@
   </div>
 </div>
 
+<div id="group-wrap" style="margin-bottom:4px;">
+  <div class="field-row">
+    <div>
+      <label for="student-count">Number of students</label>
+      <select id="student-count" onchange="renderGroupStudents()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select>
+    </div>
+    <div id="group-mode-wrap" style="display:none;">
+      <label for="group-mode">Programs</label>
+      <select id="group-mode" onchange="renderGroupStudents()">
+        <option value="same">Same program for all</option>
+        <option value="different">Different programs</option>
+      </select>
+    </div>
+  </div>
+  <div id="group-students"></div>
+</div>
+
 <div class="field-row" id="free-weeks-row">
   <div>
     <label>Free weeks (promotional)</label>
@@ -1767,6 +1784,91 @@ function quoteHeaderRows(d, extra) {
   return rows;
 }
 
+/* =========================================================================
+   GROUP QUOTES (number of students)
+   The fee breakdown is always for one student. With 2+ students the quote adds
+   a group summary: same program = per-student total x number of students;
+   different programs = each extra student priced on their own program, with
+   every other setting (dates, accommodation, discounts...) shared.
+   ========================================================================= */
+let lastGroup = null;
+
+function groupCount() {
+  return parseInt((document.getElementById("student-count") || {}).value) || 1;
+}
+function groupMode() {
+  return (document.getElementById("group-mode") || {}).value || "same";
+}
+function renderGroupStudents() {
+  const n    = groupCount();
+  const mode = groupMode();
+  document.getElementById("group-mode-wrap").style.display = n > 1 ? "block" : "none";
+  const box  = document.getElementById("group-students");
+  const prev = {};
+  box.querySelectorAll("select").forEach(function(sel) { prev[sel.id] = sel.value; });
+  box.innerHTML = "";
+  if (n < 2 || mode !== "different") return;
+  const main = document.getElementById("program-type");
+  let html = '<div class="field-row">';
+  for (let i = 2; i <= n; i++) {
+    html += '<div><label for="student-prog-' + i + '">Student ' + i + ' program</label>' +
+            '<select id="student-prog-' + i + '">' + main.innerHTML + '</select></div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+  for (let i = 2; i <= n; i++) {
+    const sel = document.getElementById("student-prog-" + i);
+    const want = prev["student-prog-" + i];
+    const ok = want && Array.prototype.some.call(sel.options, function(o) { return o.value === want; });
+    sel.value = ok ? want : main.value;
+  }
+}
+function buildQuoteGroup(d) {
+  const n = groupCount();
+  if (n < 2) return { count:1, same:true, students:[{ n:1, label:d.progLabel, total:d.total, d:d }], grand:d.total };
+  const mode = groupMode();
+  const students = [{ n:1, label:d.progLabel, total:d.total, d:d }];
+  for (let i = 2; i <= n; i++) {
+    let di = d;
+    if (mode === "different") {
+      const sel  = document.getElementById("student-prog-" + i);
+      const prog = sel ? sel.value : d.prog;
+      di = prog === d.prog ? d : calculateGeneric(prog);
+    }
+    students.push({ n:i, label:di.progLabel, total:di.total, d:di });
+  }
+  const grand = students.reduce(function(a, st) { return a + st.total; }, 0);
+  return { count:n, same:mode !== "different", students:students, grand:grand };
+}
+/* What the TOTAL line is called: plain for one student, per student for a group */
+function totalLabelFor(g, n) {
+  if (!g || g.count < 2) return "TOTAL";
+  return "TOTAL (Student " + (n || 1) + ")";
+}
+/* Section heading above each student's breakdown in a group quote */
+function studentHeading(st) { return "Student " + st.n + " - " + st.label; }
+/* The students after Student 1, each with their own full breakdown */
+function extraStudents(g) { return (g && g.count > 1) ? g.students.slice(1) : []; }
+/* Group summary rows shown after the TOTAL: [label, amount] */
+function groupSummaryRows(g, country) {
+  if (!g || g.count < 2) return [];
+  const rows = [];
+  g.students.forEach(function(st) { rows.push([studentHeading(st), money(st.total, country)]); });
+  rows.push(["GROUP TOTAL (" + g.count + " students)", money(g.grand, country)]);
+  return rows;
+}
+/* Notes printed under every total: promo validity and the per-student disclaimer */
+function quoteNotes(d, g) {
+  const notes = [];
+  const promoUsed = d.promoDiscountAmount > 0 || (g && g.students.some(function(st) { return st.d && st.d.promoDiscountAmount > 0; }));
+  if (promoUsed) {
+    notes.push(PROMO.name + " valid " + promoDateRange() + " only.");
+  }
+  if (!g || g.count < 2) notes.push("This price is for one student only.");
+  else notes.push("Each price above is for one student. The group total covers " + (g.count === 2 ? "both students." : "all " + g.count + " students."));
+  return notes;
+}
+
 /* Shared fee row builder used by the on-screen quote, PDF, and copy output */
 function buildFeeRows(d) {
   const rows = [];
@@ -1847,15 +1949,24 @@ function calculateQuote() {
   lastMode     = 'single';
   lastCalcData = d;
   lastCompNet  = null;
+  lastGroup    = buildQuoteGroup(d);
+  const g      = lastGroup;
 
-  let body = "";
-  buildFeeRows(d).forEach(function(r) {
-    const val = r.negative
-      ? '<span class="discount-line">-' + money(r.value, d.country) + '</span>'
-      : money(r.value, d.country);
-    body += r.label + ": " + val
-      + (r.note ? ' <span class="unit-rate">(' + r.note + ')</span>' : '') + '<br>';
-  });
+  function screenRows(dd) {
+    let out = "";
+    buildFeeRows(dd).forEach(function(r) {
+      const val = r.negative
+        ? '<span class="discount-line">-' + money(r.value, dd.country) + '</span>'
+        : money(r.value, dd.country);
+      out += r.label + ": " + val
+        + (r.note ? ' <span class="unit-rate">(' + r.note + ')</span>' : '') + '<br>';
+    });
+    return out;
+  }
+  const stHead = function(st) {
+    return '<div style="font-weight:bold;color:#534AB7;font-size:1.05em;margin:4px 0 6px;">' + studentHeading(st) + '</div>';
+  };
+  let body = (g.count > 1 ? stHead(g.students[0]) : "") + screenRows(d);
 
   let head = "";
   quoteHeaderRows(d).forEach(function(r) {
@@ -1865,7 +1976,20 @@ function calculateQuote() {
   document.getElementById("total-price").innerHTML =
     '<div style="border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px;">' + head + '</div>' +
     body +
-    '<br><strong style="font-size:1.3em;color:#0077cc;">TOTAL: ' + money(d.total, d.country) + '</strong>';
+    '<br><strong style="font-size:1.3em;color:#0077cc;">' + totalLabelFor(g) + ': ' + money(d.total, d.country) + '</strong>' +
+    extraStudents(g).map(function(st) {
+      return '<div style="border-top:1px solid #ddd;margin-top:14px;padding-top:10px;">' + stHead(st) + screenRows(st.d) +
+             '<br><strong style="font-size:1.3em;color:#0077cc;">' + totalLabelFor(g, st.n) + ': ' + money(st.total, st.d.country) + '</strong></div>';
+    }).join('') +
+    (g.count > 1
+      ? '<div style="margin-top:10px;padding:8px 10px;background:#eef7ff;border-radius:4px;">' +
+        groupSummaryRows(g, d.country).map(function(r, i, arr) {
+          const last = i === arr.length - 1;
+          return (last ? '<strong style="font-size:1.15em;color:#0077cc;">' : '') + r[0] + ': ' + r[1] + (last ? '</strong>' : '');
+        }).join('<br>') + '</div>'
+      : '') +
+    '<div style="margin-top:8px;font-size:11px;color:#777;">' +
+      quoteNotes(d, g).map(function(n) { return '* ' + n; }).join('<br>') + '</div>';
 
   document.getElementById("total-price").style.display = "block";
   document.getElementById("action-buttons").style.display = "block";
@@ -2165,13 +2289,16 @@ function downloadPDF() {
         y += 6;
       });
 
-      y += 4; hline(y); y += 7;
+      const g = lastGroup || buildQuoteGroup(d);
+      function drawStudent(st) {
+      const dd = st.d;
+      y += 4; checkPage(24); hline(y); y += 7;
       doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(50,50,50);
-      doc.text("FEE BREAKDOWN", margin, y); y += 6;
+      doc.text(g.count > 1 ? "FEE BREAKDOWN - " + studentHeading(st).toUpperCase() : "FEE BREAKDOWN", margin, y); y += 6;
       hline(y); y += 5;
 
       doc.setFontSize(9);
-      buildFeeRows(d).forEach(function(item, idx) {
+      buildFeeRows(dd).forEach(function(item, idx) {
         const hasNote   = !!item.note;
         const rowHeight = hasNote ? 9.5 : 6.5;
         checkPage(rowHeight + 2);
@@ -2181,7 +2308,7 @@ function downloadPDF() {
         doc.text(item.label, margin+2, y);
         doc.setFont("helvetica","bold");
         if (item.negative) doc.setTextColor(192,57,43);
-        doc.text((item.negative ? "-" : "") + money(item.value, d.country), pageW-margin, y, {align:"right"});
+        doc.text((item.negative ? "-" : "") + money(item.value, dd.country), pageW-margin, y, {align:"right"});
         doc.setTextColor(50,50,50);
 
         if (hasNote) {
@@ -2196,9 +2323,29 @@ function downloadPDF() {
       y += 2; hline(y, [0,119,204]); y += 5;
       doc.setFillColor(0,119,204); doc.rect(margin, y-4, colW, 10, "F");
       doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(12);
-      doc.text("TOTAL", margin+3, y+3);
-      doc.text(money(d.total, d.country), pageW-margin-3, y+3, {align:"right"});
+      doc.text(totalLabelFor(g, st.n), margin+3, y+3);
+      doc.text(money(dd.total, dd.country), pageW-margin-3, y+3, {align:"right"});
       y += 14;
+      }
+      g.students.forEach(drawStudent);
+      const gRows = groupSummaryRows(g, d.country);
+      if (gRows.length) {
+        doc.setTextColor(50,50,50); doc.setFontSize(9);
+        gRows.forEach(function(r, i) {
+          const last = i === gRows.length - 1;
+          checkPage(8);
+          if (last) { doc.setFillColor(238,247,255); doc.rect(margin, y-4, colW, 7, "F"); }
+          doc.setFont("helvetica", last ? "bold" : "normal");
+          doc.text(r[0], margin+3, y);
+          doc.text(r[1], pageW-margin-3, y, {align:"right"});
+          y += last ? 9 : 6;
+        });
+      }
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120,120,120);
+      quoteNotes(d, g).forEach(function(n) {
+        doc.splitTextToSize("* " + n, colW).forEach(function(line) { checkPage(5); doc.text(line, margin, y); y += 4.5; });
+      });
+      y += 3;
 
     } else if (lastMode === 'comparison' && lastCompResults.length) {
       doc.setFillColor(80,50,180); doc.rect(0, 0, pageW, 14, "F");
@@ -2336,6 +2483,8 @@ function buildSingleQuoteText() {
     lines.push((r[0] + "                 ").slice(0, 17) + ": " + r[1]);
   });
   lines.push(rule);
+  const g = (lastMode === "single" && lastGroup) ? lastGroup : buildQuoteGroup(d);
+  if (g.count > 1) { lines.push(studentHeading(g.students[0]).toUpperCase()); lines.push(rule); }
 
   buildFeeRows(d).forEach(function(r) {
     lines.push(copyRow(r.label, (r.negative ? "-" : "") + money(r.value, d.country), W));
@@ -2343,8 +2492,25 @@ function buildSingleQuoteText() {
   });
 
   lines.push(rule);
-  lines.push(copyRow("TOTAL", money(d.total, d.country), W));
+  lines.push(copyRow(totalLabelFor(g), money(d.total, d.country), W));
+  extraStudents(g).forEach(function(st) {
+    lines.push(bar);
+    lines.push(studentHeading(st).toUpperCase());
+    lines.push(rule);
+    buildFeeRows(st.d).forEach(function(r) {
+      lines.push(copyRow(r.label, (r.negative ? "-" : "") + money(r.value, st.d.country), W));
+      if (r.note) lines.push("   " + r.note);
+    });
+    lines.push(rule);
+    lines.push(copyRow(totalLabelFor(g, st.n), money(st.total, st.d.country), W));
+  });
+  const gRows = groupSummaryRows(g, d.country);
+  if (gRows.length) {
+    lines.push(rule);
+    gRows.forEach(function(r) { lines.push(copyRow(r[0], r[1], W)); });
+  }
   lines.push(bar);
+  quoteNotes(d, g).forEach(function(n) { lines.push("* " + n); });
   return lines.join("\n");
 }
 
@@ -2412,7 +2578,8 @@ function buildSingleQuoteHTML() {
   }
   quoteHeaderRows(d).forEach(function(r) { detail(r[0], r[1]); });
 
-  rows += '<tr><td colspan="2" ' + sectionHd + '>FEE BREAKDOWN</td></tr>';
+  const g = (lastMode === "single" && lastGroup) ? lastGroup : buildQuoteGroup(d);
+  rows += '<tr><td colspan="2" ' + sectionHd + '>FEE BREAKDOWN' + (g.count > 1 ? ' - ' + studentHeading(g.students[0]) : '') + '</td></tr>';
 
   let zebra = false;
   buildFeeRows(d).forEach(function(r) {
@@ -2425,7 +2592,29 @@ function buildSingleQuoteHTML() {
     zebra = !zebra;
   });
 
-  rows += '<tr><td ' + totalLbl + '>TOTAL</td><td ' + totalVal + '>' + money(d.total, d.country) + '</td></tr>';
+  rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g) + '</td><td ' + totalVal + '>' + money(d.total, d.country) + '</td></tr>';
+  extraStudents(g).forEach(function(st) {
+    rows += '<tr><td colspan="2" style="padding:8px 14px;background-color:#f3f0ff;font-weight:bold;font-size:12px;color:#534AB7;border-top:2px solid #534AB7;">' + studentHeading(st) + '</td></tr>';
+    let zb = false;
+    buildFeeRows(st.d).forEach(function(r) {
+      const bg = zb ? "background-color:#fafafa;" : "";
+      const color = r.negative ? "color:#c0392b;" : "";
+      rows += '<tr><td style="padding:8px 14px;color:#333333;' + bg + '">' + r.label + '</td>' +
+              '<td style="padding:8px 14px;text-align:right;font-weight:bold;' + bg + color + '">' +
+              (r.negative ? "-" : "") + money(r.value, st.d.country) + '</td></tr>';
+      if (r.note) rows += '<tr><td colspan="2" ' + noteRow + '>' + r.note + '</td></tr>';
+      zb = !zb;
+    });
+    rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g, st.n) + '</td><td ' + totalVal + '>' + money(st.total, st.d.country) + '</td></tr>';
+  });
+  groupSummaryRows(g, d.country).forEach(function(r, i, arr) {
+    const last = i === arr.length - 1;
+    rows += last
+      ? '<tr><td ' + totalLbl + '>' + r[0] + '</td><td ' + totalVal + '>' + r[1] + '</td></tr>'
+      : '<tr><td style="padding:6px 14px;color:#333333;">' + r[0] + '</td><td style="padding:6px 14px;text-align:right;font-weight:bold;">' + r[1] + '</td></tr>';
+  });
+  rows += '<tr><td colspan="2" style="padding:8px 14px;color:#777777;font-size:11px;">' +
+          quoteNotes(d, g).map(function(n) { return '* ' + n; }).join('<br>') + '</td></tr>';
   return '<table ' + wrap + '><tbody>' + rows + '</tbody></table>';
 }
 
@@ -2521,6 +2710,10 @@ function clearForm() {
   document.getElementById("duration").value          = DEFAULT_WEEKS;
   document.getElementById("discount").value          = 0;
   document.getElementById("promo-discount").value    = 0;
+  document.getElementById("student-count").value     = "1";
+  document.getElementById("group-mode").value        = "same";
+  renderGroupStudents();
+  lastGroup = null;
   document.getElementById("homestay-duration").value = 0;
   document.getElementById("homestay-type").value     = "No Accommodation";
   document.getElementById("transfer-type").value     = "No Transfer";
@@ -3724,6 +3917,64 @@ function getRepDetails() {
   };
 }
 
+/* How to Enroll steps for the template email. Canadian programs of
+   STUDY_PERMIT_WEEKS or more need a study permit, so they get the longer
+   admission list (proof of funds, SOP, PAL, deposit). Each step is
+   [html, text] so the email and plain-text versions stay identical. */
+const STUDY_PERMIT_WEEKS = 28;
+const STUDY_PERMIT_LIVING_EXPENSES = "$23,448 CAD";
+const STUDY_PERMIT_DEPOSIT = "$1,000";
+function enrolSteps(campus, country, weeks, flywire, hasPayInfo) {
+  const payTail = hasPayInfo ? " or the payment information below" : "";
+  const appForm  = ['Fill out the <a href="https://forms.iqschools.net/oieg/Application" target="_blank">Application form</a> and read our <a href="https://www.oxfordinternationalenglish.com/useful-information/school-policies/" target="_blank">School Policies</a>',
+                    "Fill out the Application form (https://forms.iqschools.net/oieg/Application) and read our School Policies (https://www.oxfordinternationalenglish.com/useful-information/school-policies/)"];
+  const fullPay  = ['Complete your full payment via <a href="' + flywire + '" target="_blank">Flywire</a>' + payTail,
+                    "Complete your full payment via Flywire (" + flywire + ")" + payTail];
+  const visa     = ["If applicable, share your visa photocopy with our admissions team",
+                    "If applicable, share your visa photocopy with our admissions team"];
+  const arrival  = ["Once you've paid in full and provided your flight information, we will issue your homestay and airport confirmation",
+                    "Once you've paid in full and provided your flight information, we will issue your homestay and airport confirmation"];
+  const welcome  = ["Your welcome letter will be sent the Wednesday before your starting date",
+                    "Your welcome letter will be sent the Wednesday before your starting date"];
+
+  if (country === "Canada" && weeks >= STUDY_PERMIT_WEEKS) {
+    const fundsUrl = "https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/get-documents/financial-support.html#expenses";
+    const steps = [
+      appForm,
+      ["<strong>Proof of funds</strong> with an amount that covers the tuition fee + " + STUDY_PERMIT_LIVING_EXPENSES + " living expenses/year + travel costs to and from Canada. Bank statements for the last 4 months from the same bank account, showing that the student has kept the balance for the last 4 months. (Refer to this link for further info: <a href=\"" + fundsUrl + "\" target=\"_blank\">Study permit: Get the right documents - Proof of financial support - Canada.ca</a>)",
+       "Proof of funds with an amount that covers the tuition fee + " + STUDY_PERMIT_LIVING_EXPENSES + " living expenses/year + travel costs to and from Canada. Bank statements for the last 4 months from the same bank account, showing that the student has kept the balance for the last 4 months. (Further info: " + fundsUrl + ")"],
+      ["<strong>SOP</strong> - Statement of purpose letter", "SOP - Statement of purpose letter"]
+    ];
+    if (campus === "Halifax") steps.push(["FINAL PAL Student Authorization and Consent Language", "FINAL PAL Student Authorization and Consent Language"]);
+    steps.push(
+      ["Once approved, we will notify you and you will need to pay a <strong>" + STUDY_PERMIT_DEPOSIT + " deposit</strong>",
+       "Once approved, we will notify you and you will need to pay a " + STUDY_PERMIT_DEPOSIT + " deposit"],
+      ["We will issue your invoice, Letter of Acceptance (LOA) and Provisional Attestation Letter (PAL)",
+       "We will issue your invoice, Letter of Acceptance (LOA) and Provisional Attestation Letter (PAL)"],
+      fullPay, visa, arrival, welcome
+    );
+    return steps;
+  }
+  return [
+    appForm,
+    ['Pay the <strong>non-refundable enrolment fee of ' + money(registrationFees[country], country) + '</strong> via <a href="' + flywire + '" target="_blank">Flywire</a>' + payTail,
+     "Pay the non-refundable enrolment fee of " + money(registrationFees[country], country) + " via Flywire (" + flywire + ")" + payTail],
+    ["We will issue your invoice and Letter of Acceptance (LOA)", "We will issue your invoice and Letter of Acceptance (LOA)"],
+    fullPay, visa, arrival, welcome
+  ];
+}
+function enrolStepsHTML(campus, country, weeks, flywire, hasPayInfo) {
+  const steps = enrolSteps(campus, country, weeks, flywire, hasPayInfo);
+  return '<h3 style="margin:15px 0 10px 0; color:#333;">How to Enroll - ' + steps.length + ' Easy Steps</h3>' +
+         '<ol style="margin:10px 0; padding-left:20px;">' +
+         steps.map(function(st){ return '<li style="margin-bottom:4px;">' + st[0] + '</li>'; }).join("") + '</ol>';
+}
+function enrolStepsText(campus, country, weeks, flywire, hasPayInfo) {
+  const steps = enrolSteps(campus, country, weeks, flywire, hasPayInfo);
+  return "HOW TO ENROLL - " + steps.length + " EASY STEPS\n\n" +
+         steps.map(function(st, i){ return (i + 1) + ". " + st[1]; }).join("\n\n");
+}
+
 function showTemplateEmail() {
   const country = document.getElementById("country").value;
   const campus = document.getElementById("campus").value;
@@ -3791,6 +4042,8 @@ function showTemplateEmail() {
       quotationSection += `<div style="margin-bottom:3px;"><span style="color:#777;">${row[0]}:</span> <strong>${row[1]}</strong></div>`;
     });
     quotationSection += `<hr style="border:none; border-top:1px solid #ddd; margin:10px 0;">`;
+    const g = lastGroup || buildQuoteGroup(d);
+    if (g.count > 1) quotationSection += `<div style="font-weight:bold; color:#534AB7; font-size:12px; margin-bottom:6px;">${studentHeading(g.students[0])}</div>`;
 
     /* Every fee line, straight from the same builder the on-screen quote uses. */
     buildFeeRows(d).forEach(function(item) {
@@ -3802,7 +4055,29 @@ function showTemplateEmail() {
     });
 
     quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;">`;
-    quotationSection += `<strong style="font-size:13px; color:#0077cc;">TOTAL: ${money(d.total, d.country)}</strong>`;
+    quotationSection += `<strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g)}: ${money(d.total, d.country)}</strong>`;
+    extraStudents(g).forEach(function(st) {
+      quotationSection += `<hr style="border:none; border-top:1px solid #ddd; margin:12px 0 8px;"><div style="font-weight:bold; color:#534AB7; font-size:12px; margin-bottom:6px;">${studentHeading(st)}</div>`;
+      buildFeeRows(st.d).forEach(function(item) {
+        const amount = (item.negative && item.value > 0 ? "-" : "") + money(item.value, st.d.country);
+        const colour = item.negative && item.value > 0 ? "#c0392b" : "#333";
+        quotationSection += `<div style="margin-bottom:2px;"><strong>${item.label}:</strong> <span style="color:${colour};">${amount}</span>`;
+        if (item.note) quotationSection += ` <span style="color:#999; font-size:10px;">(${item.note})</span>`;
+        quotationSection += `</div>`;
+      });
+      quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;"><strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g, st.n)}: ${money(st.total, st.d.country)}</strong>`;
+    });
+    const gRows = groupSummaryRows(g, d.country);
+    if (gRows.length) {
+      quotationSection += `<div style="margin-top:8px; padding:6px 8px; background:#eef7ff; border-radius:3px;">`;
+      gRows.forEach(function(r, i) {
+        quotationSection += i === gRows.length - 1
+          ? `<div style="margin-top:3px;"><strong style="font-size:13px; color:#0077cc;">${r[0]}: ${r[1]}</strong></div>`
+          : `<div>${r[0]}: <strong>${r[1]}</strong></div>`;
+      });
+      quotationSection += `</div>`;
+    }
+    quotationSection += `<div style="margin-top:8px; color:#777; font-size:10px;">${quoteNotes(d, g).map(function(n){ return "* " + n; }).join("<br>")}</div>`;
     quotationSection += `</div>`;
     
   } else if (lastMode === 'comparison' && lastCompResults.length) {
@@ -3932,16 +4207,7 @@ function showTemplateEmail() {
 
       ${campusMediaBlock}
 
-      <h3 style="margin:15px 0 10px 0; color:#333;">How to Enroll - 7 Easy Steps</h3>
-      <ol style="margin:10px 0; padding-left:20px;">
-        <li>Fill out the <a href="https://forms.iqschools.net/oieg/Application" target="_blank">Application form</a> and read our <a href="https://www.oxfordinternationalenglish.com/useful-information/school-policies/" target="_blank">School Policies</a></li>
-        <li>Pay the <strong>non-refundable enrolment fee of ${money(registrationFees[country], country)}</strong> via <a href="${info.flywire}" target="_blank">Flywire</a>${campusPayBlock ? " or the payment information below" : ""}</li>
-        <li>We will issue your invoice and Letter of Acceptance (LOA)</li>
-        <li>Complete your full payment via <a href="${info.flywire}" target="_blank">Flywire</a>${campusPayBlock ? " or the payment information below" : ""}</li>
-        <li>If applicable, share your visa photocopy with our admissions team</li>
-        <li>Once you've paid in full and provided your flight information, we will issue your homestay and airport confirmation</li>
-        <li>Your welcome letter will be sent the Wednesday before your starting date</li>
-      </ol>
+      ${enrolStepsHTML(campus, country, totalWeeks, info.flywire, !!campusPayBlock)}
       
       ${campusPayBlock}
 
@@ -4027,12 +4293,25 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
       quotationText += row[0] + ": " + row[1] + "\n";
     });
     quotationText += `${"-".repeat(50)}\n`;
+    const g = lastGroup || buildQuoteGroup(d);
+    if (g.count > 1) quotationText += `${studentHeading(g.students[0]).toUpperCase()}\n${"-".repeat(50)}\n`;
     buildFeeRows(d).forEach(function(item) {
       const amount = (item.negative && item.value > 0 ? "-" : "") + money(item.value, d.country);
       quotationText += item.label + ": " + amount + (item.note ? " (" + item.note + ")" : "") + "\n";
     });
     quotationText += `${"=".repeat(50)}\n`;
-    quotationText += `TOTAL: ${money(d.total, d.country)}\n`;
+    quotationText += `${totalLabelFor(g)}: ${money(d.total, d.country)}\n`;
+    extraStudents(g).forEach(function(st) {
+      quotationText += `\n${studentHeading(st).toUpperCase()}\n${"-".repeat(50)}\n`;
+      buildFeeRows(st.d).forEach(function(item) {
+        const amount = (item.negative && item.value > 0 ? "-" : "") + money(item.value, st.d.country);
+        quotationText += item.label + ": " + amount + (item.note ? " (" + item.note + ")" : "") + "\n";
+      });
+      quotationText += `${"=".repeat(50)}\n${totalLabelFor(g, st.n)}: ${money(st.total, st.d.country)}\n`;
+    });
+    if (g.count > 1) quotationText += "\n";
+    groupSummaryRows(g, d.country).forEach(function(r) { quotationText += r[0] + ": " + r[1] + "\n"; });
+    quotationText += "\n" + quoteNotes(d, g).map(function(n){ return "* " + n; }).join("\n") + "\n";
     
   } else if (lastMode === 'comparison' && lastCompResults.length) {
     quotationText = `\nPROGRAMME COMPARISON\n${"=".repeat(50)}\n`;
@@ -4108,21 +4387,7 @@ ${info.address}
 ${quotationText}
 
 ${brochureText()}${campusMediaText}
-HOW TO ENROLL - 7 EASY STEPS
-
-1. Fill out the Application form (https://forms.iqschools.net/oieg/Application) and read our School Policies (https://www.oxfordinternationalenglish.com/useful-information/school-policies/)
-
-2. Pay the non-refundable enrolment fee of ${money(registrationFees[country], country)} via Flywire (${info.flywire})${campusPayText ? " or the payment information below" : ""}
-
-3. We will issue your invoice and Letter of Acceptance (LOA)
-
-4. Complete your full payment via Flywire (${info.flywire})${campusPayText ? " or the payment information below" : ""}
-
-5. If applicable, share your visa photocopy with our admissions team
-
-6. Once you've paid in full and provided your flight information, we will issue your homestay and airport confirmation
-
-7. Your welcome letter will be sent the Wednesday before your starting date
+${enrolStepsText(campus, country, totalWeeks, info.flywire, !!campusPayText)}
 
 ${campusPayText}
 QUESTIONS?
@@ -4270,6 +4535,9 @@ function copyRichEmail(plainText) {
    INIT
    ========================================================================= */
 document.addEventListener("DOMContentLoaded", function() {
+  /* extra students' program lists follow the main program list (school/country changes) */
+  new MutationObserver(function() { renderGroupStudents(); })
+    .observe(document.getElementById("program-type"), { childList:true });
   ["duration","country","campus","student-category"].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) { el.addEventListener("input", updatePromoGuide); el.addEventListener("change", updatePromoGuide); }
