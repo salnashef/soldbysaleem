@@ -799,6 +799,7 @@ const changeFees            = { Canada:120, USA:100 };
 const specialDietWeekly     = 49;
 const MINOR_SUPPLEMENT_WEEKLY_RATE = 49;
 const I20_FEE = 75;
+const I20_AUTO_WEEKS = 12;   /* longer than this = I-20 fee added automatically */
 
 const electiveAddOns = {
   Canada: [
@@ -932,6 +933,8 @@ let lastDuration   = 1;
 let lastMode       = 'single';
 let lastCompResults = [];
 let lastCompNet    = null;
+let lastCompASP    = null;   /* comparison ASP row, once calculated */
+let lastAgent      = null;   /* single quote: { net:bool, asp:bool, rate, enrol, figs } */
 let lastCalcData   = null;
 
 /* =========================================================================
@@ -1677,7 +1680,11 @@ function calculateGeneric(prog) {
   const insFee   = optOutIns ? 0 : duration * 7 * insuranceRates[country];
   const electiveFee = electiveRate * duration;
   const changeFee   = changeCount * changeFees[country];
-  const i20Fee      = (country === "USA" && i20) ? I20_FEE : 0;
+  /* I-20 fee: added automatically for USA courses longer than I20_AUTO_WEEKS weeks;
+     the checkbox still adds it for shorter courses or a re-issue */
+  const i20Auto     = country === "USA" && duration > I20_AUTO_WEEKS;
+  const i20Fee      = (country === "USA" && (i20 || i20Auto)) ? I20_FEE : 0;
+  const i20Note     = i20Auto ? "Flat, courses over " + I20_AUTO_WEEKS + " weeks" : "Flat";
   const custodian   = country === "Canada" ? custodianFee : 0;
 
   const total = tuitionFinal + regFee + matTotal + accomBase + extraNightFee + pFee + hsTotal
@@ -1708,7 +1715,7 @@ function calculateGeneric(prog) {
     dietFee:dietFee, studentType:studentType, supplementFee:supplementFee,
     insFee:insFee, transferType:transferType, transferFee:transferFee, optOutIns:optOutIns,
     electiveRate:electiveRate, electiveFee:electiveFee, lessonsFee:lessonsFee,
-    custodianFee:custodian, i20Fee:i20Fee, changeCount:changeCount, changeFee:changeFee,
+    custodianFee:custodian, i20Fee:i20Fee, i20Note:i20Note, changeCount:changeCount, changeFee:changeFee,
     ieltsExamFee:ieltsExamFee,
     total:total
   };
@@ -1935,7 +1942,7 @@ function buildFeeRows(d) {
   if (d.electiveFee > 0) add("Specialised elective add-on", d.electiveFee, money(d.electiveRate, d.country) + "/wk x " + d.duration + " wks");
   if (d.lessonsFee > 0) add("Private / semi-private lessons", d.lessonsFee, "Package");
   if (d.custodianFee > 0) add("Custodianship", d.custodianFee, "Flat");
-  if (d.i20Fee > 0) add("I-20 processing / re-issue", d.i20Fee, "Flat");
+  if (d.i20Fee > 0) add(d.i20Note && d.i20Note !== "Flat" ? "I-20 fee" : "I-20 processing / re-issue", d.i20Fee, d.i20Note || "Flat");
   if (d.changeFee > 0) add("Course / accommodation changes", d.changeFee, money(changeFees[d.country], d.country) + " x " + d.changeCount);
   if (d.ieltsExamFee > 0) add("IELTS exam", d.ieltsExamFee, "Fees and taxes vary by test centre");
   return rows;
@@ -1954,6 +1961,8 @@ function calculateQuote() {
   lastMode     = 'single';
   lastCalcData = d;
   lastCompNet  = null;
+  lastCompASP  = null;
+  lastAgent    = null;
   lastGroup    = buildQuoteGroup(d);
   const g      = lastGroup;
 
@@ -2106,6 +2115,8 @@ function calculateComparison() {
   });
   lastCompResults = results;
   lastCompNet  = null;
+  lastCompASP  = null;
+  lastAgent    = null;
   lastMode     = 'comparison';
   lastDuration = parseInt(document.getElementById("duration").value) || 1;
   lastCalcData = null;
@@ -2158,14 +2169,76 @@ function computeASP(tuitionAfterDiscount, commissionRate, enrolmentFee, weeks) {
   return { commissionAmt:commissionAmt, asp:asp };
 }
 
+/* Agent figures for the current single quote, per student and for the group.
+   Commission is a % of tuition after discounts; net = total - commission;
+   ASP = (tuition - commission + enrolment fee) / weeks. Group ASP is the
+   group's combined (tuition - commission + enrolment) over combined weeks. */
+function agentFigures(rate, enrol) {
+  const d = lastCalcData;
+  const g = lastGroup || buildQuoteGroup(d);
+  const rows = g.students.map(function(st) {
+    const dd    = st.d;
+    const weeks = dd.duration || lastDuration || 1;
+    const comm  = dd.tuitionFinal * (rate / 100);
+    return { n:st.n, label:studentHeading(st), country:dd.country, tuition:dd.tuitionFinal, comm:comm,
+             total:dd.total, net:dd.total - comm, weeks:weeks, asp:(dd.tuitionFinal - comm + enrol) / weeks };
+  });
+  const sum = function(k) { return rows.reduce(function(a, r) { return a + r[k]; }, 0); };
+  const grp = { comm:sum("comm"), net:sum("net"), weeks:sum("weeks"),
+                asp:(sum("tuition") - sum("comm") + enrol * rows.length) / (sum("weeks") || 1) };
+  return { rate:rate, enrol:enrol, count:g.count, country:d.country, rows:rows, group:grp };
+}
+/* Rows for the agent summary in every single-quote output: {label, value, negative, strong} */
+function agentSummaryRows() {
+  if (!lastAgent || lastMode !== "single" || !lastCalcData) return [];
+  const f = lastAgent.figs, out = [], c = f.country, multi = f.count > 1;
+  f.rows.forEach(function(r) {
+    const pre = multi ? "Student " + r.n + " " : "";
+    if (lastAgent.net) {
+      out.push({ label:(multi ? pre + "commission" : "Commission") + " (" + f.rate + "% of tuition)", value:"-" + money(r.comm, c), negative:true });
+      out.push({ label:(multi ? pre + "net to OIEG" : "Net to OIEG"), value:money(r.net, c), strong:!multi });
+    }
+    if (lastAgent.asp) out.push({ label:(multi ? pre + "ASP" : "ASP") + " (per week)", value:money(r.asp, c) + "/wk", strong:!multi });
+  });
+  if (multi) {
+    if (lastAgent.net) {
+      out.push({ label:"Group commission", value:"-" + money(f.group.comm, c), negative:true });
+      out.push({ label:"GROUP NET TO OIEG", value:money(f.group.net, c), strong:true });
+    }
+    if (lastAgent.asp) out.push({ label:"GROUP ASP (per week)", value:money(f.group.asp, c) + "/wk", strong:true });
+  }
+  return out;
+}
+function agentSummaryNote() {
+  if (!lastAgent) return "";
+  const bits = [];
+  if (lastAgent.net) bits.push("Net to OIEG = total - commission");
+  if (lastAgent.asp) bits.push("ASP = (tuition - commission + enrolment fee " + money(lastAgent.enrol, lastAgent.figs.country) + ") / weeks");
+  return "Commission " + lastAgent.figs.rate + "% of tuition after discounts. " + bits.join(". ") + ".";
+}
+function renderAgentResult() {
+  const rows = agentSummaryRows();
+  const out  = document.getElementById("agent-result");
+  out.innerHTML = rows.map(function(r) {
+    const val = r.negative ? '<span class="discount-line">' + r.value + '</span>' : r.value;
+    return r.strong ? '<span class="asp-highlight">' + r.label + ': ' + val + '</span>' : r.label + ': ' + val;
+  }).join('<br>') +
+  '<br><span style="font-size:11px;color:#999;">' + agentSummaryNote() + '<br>Included in the PDF, copy and email quote.</span>';
+  out.style.display = "block";
+}
+function setAgent(kind) {
+  const rate  = parseFloat(document.getElementById("commission").value) || 0;
+  const enrol = parseFloat(document.getElementById("enrolment-fee").value) || 0;
+  const keep  = lastAgent && lastAgent.rate === rate && lastAgent.enrol === enrol ? lastAgent : { net:false, asp:false };
+  lastAgent = { net:keep.net, asp:keep.asp, rate:rate, enrol:enrol, figs:agentFigures(rate, enrol) };
+  lastAgent[kind] = true;
+  renderAgentResult();
+}
+
 function calculateCommission() {
-  const rate = parseFloat(document.getElementById("commission").value) || 0;
-  const amt  = lastTuitionAfterDiscount * (rate / 100);
-  const country = lastCalcData ? lastCalcData.country : document.getElementById("country").value;
-  document.getElementById("agent-result").innerHTML =
-    '<strong>Commission:</strong> ' + money(amt, country) + '<br>' +
-    '<strong>Net to OIEG:</strong> ' + money(lastTotal - amt, country);
-  document.getElementById("agent-result").style.display = "block";
+  if (lastMode === "comparison") { calculateNetComparison(); return; }
+  if (!lastCalcData) return;
+  setAgent("net");
 }
 
 function calculateNetComparison() {
@@ -2214,25 +2287,18 @@ function calculateASP() {
   const country  = lastCalcData ? lastCalcData.country : document.getElementById("country").value;
 
   if (lastMode === 'single') {
-    const r = computeASP(lastTuitionAfterDiscount, commRate, enrolFee, weeks);
-    const commLine = commRate > 0
-      ? 'Commission (' + commRate + '% of tuition): <span class="discount-line">-' + money(r.commissionAmt, country) + '</span><br>' : '';
-    document.getElementById("agent-result").innerHTML =
-      commLine +
-      'Tuition after commission: ' + money(lastTuitionAfterDiscount - r.commissionAmt, country) + '<br>' +
-      'Enrolment fee: ' + money(enrolFee, country) + '<br>' +
-      'Duration: ' + weeks + ' weeks<br>' +
-      '<span class="asp-highlight">ASP: ' + money(r.asp, country) + ' / week</span><br>' +
-      '<span style="font-size:11px;color:#999;">Formula: (tuition - commission + enrolment fee) / weeks</span>';
-    document.getElementById("agent-result").style.display = "block";
+    if (!lastCalcData) return;
+    setAgent("asp");
   } else if (lastMode === 'comparison' && lastCompResults.length) {
+    lastCompASP = { rate:commRate, enrol:enrolFee, weeks:weeks, values:lastCompResults.map(function(r) {
+      return { asp:computeASP(r.data.tuitionFinal, commRate, enrolFee, weeks).asp, country:r.data.country };
+    }) };
     const aspRow = document.getElementById("asp-comp-row");
     if (aspRow) {
       aspRow.style.display = "";
-      lastCompResults.forEach(function(r, i) {
-        const a = computeASP(r.data.tuitionFinal, commRate, enrolFee, weeks);
+      lastCompASP.values.forEach(function(v, i) {
         const cell = document.getElementById("asp-comp-" + i);
-        if (cell) cell.textContent = money(a.asp, r.data.country) + "/wk";
+        if (cell) cell.textContent = money(v.asp, v.country) + "/wk";
       });
     }
     document.getElementById("agent-result").innerHTML =
@@ -2350,6 +2416,26 @@ function downloadPDF() {
       quoteNotes(d, g).forEach(function(n) {
         doc.splitTextToSize("* " + n, colW).forEach(function(line) { checkPage(5); doc.text(line, margin, y); y += 4.5; });
       });
+      const aRows = agentSummaryRows();
+      if (aRows.length) {
+        y += 4; checkPage(20); hline(y, [83,74,183]); y += 6;
+        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.setTextColor(83,74,183);
+        doc.text("AGENT SUMMARY", margin, y); y += 6;
+        aRows.forEach(function(r, i) {
+          checkPage(8);
+          if (r.strong) { doc.setFillColor(243,240,255); doc.rect(margin, y-4, colW, 7, "F"); }
+          else if (i % 2 === 0) { doc.setFillColor(248,248,248); doc.rect(margin, y-4, colW, 7, "F"); }
+          doc.setFontSize(9); doc.setFont("helvetica", r.strong ? "bold" : "normal");
+          doc.setTextColor(r.strong ? 83 : 50, r.strong ? 74 : 50, r.strong ? 183 : 50);
+          doc.text(r.label, margin+2, y);
+          doc.setFont("helvetica","bold");
+          if (r.negative) doc.setTextColor(192,57,43);
+          doc.text(r.value, pageW-margin-2, y, {align:"right"});
+          y += 7;
+        });
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+        doc.splitTextToSize(agentSummaryNote(), colW).forEach(function(line) { checkPage(5); doc.text(line, margin, y); y += 4; });
+      }
       y += 3;
 
     } else if (lastMode === 'comparison' && lastCompResults.length) {
@@ -2436,6 +2522,19 @@ function downloadPDF() {
         doc.text("Commission applies to tuition after discount. Net to OIEG = total minus commission.", margin, y);
         y += 6;
       }
+      if (lastCompASP) {
+        checkPage(16);
+        doc.setFillColor(243,240,255); doc.rect(margin, y-3, colW, 8, "F");
+        doc.setTextColor(83,74,183); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+        doc.text("ASP (per week)", margin+2, y);
+        lastCompASP.values.forEach(function(v, i) {
+          doc.text(money(v.asp, v.country) + "/wk", margin+labelW+(i+0.5)*dataW, y, {align:"center"});
+        });
+        y += 9;
+        doc.setFontSize(7); doc.setTextColor(140,140,140); doc.setFont("helvetica","normal");
+        doc.text("ASP = (tuition - " + lastCompASP.rate + "% commission + enrolment fee " + money(lastCompASP.enrol, lastCompASP.values[0].country) + ") / " + lastCompASP.weeks + " weeks.", margin, y);
+        y += 6;
+      }
     }
 
     doc.setFontSize(7.5); doc.setTextColor(160,160,160); doc.setFont("helvetica","normal");
@@ -2463,8 +2562,11 @@ function downloadPDF() {
 function emailQuote() {
   const email = document.getElementById("email-address").value;
   if (!email) { alert("Enter an email address to send the quote."); return; }
-  const content = lastMode === "comparison" ? buildComparisonText() : buildSingleQuoteText();
-  window.location.href = "mailto:" + email + "?subject=Oxford International Quote&body=" + encodeURIComponent(content);
+  const campus  = document.getElementById("campus").value;
+  const subject = "Your Personalized English Program Quotation" + (campus ? " - Oxford International " + campus : "");
+  const content = "Dear " + studentGreetingName() + ",\n\nPlease find your quotation below.\n\n" +
+                  (lastMode === "comparison" ? buildComparisonText() : buildSingleQuoteText());
+  window.location.href = "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(content);
 }
 
 function centerText(text, width) {
@@ -2516,6 +2618,16 @@ function buildSingleQuoteText() {
   }
   lines.push(bar);
   quoteNotes(d, g).forEach(function(n) { lines.push("* " + n); });
+  const aRows = agentSummaryRows();
+  if (aRows.length) {
+    lines.push("");
+    lines.push(bar);
+    lines.push(centerText("AGENT SUMMARY", W));
+    lines.push(rule);
+    aRows.forEach(function(r) { lines.push(copyRow(r.label, r.value, W)); });
+    lines.push(rule);
+    lines.push(agentSummaryNote());
+  }
   return lines.join("\n");
 }
 
@@ -2560,6 +2672,10 @@ function buildComparisonText() {
       lastCompNet.values.map(function(v){ return "-" + money(v.commissionAmt, v.country); })));
     lines.push(tRow("Net to OIEG",
       lastCompNet.values.map(function(v){ return money(v.net, v.country); })));
+  }
+  if (lastCompASP) {
+    lines.push(rule);
+    lines.push(tRow("ASP (per week)", lastCompASP.values.map(function(v){ return money(v.asp, v.country); })));
   }
   lines.push(bar);
   return lines.join("\n");
@@ -2620,6 +2736,16 @@ function buildSingleQuoteHTML() {
   });
   rows += '<tr><td colspan="2" style="padding:8px 14px;color:#777777;font-size:11px;">' +
           quoteNotes(d, g).map(function(n) { return '* ' + n; }).join('<br>') + '</td></tr>';
+  const aRows = agentSummaryRows();
+  if (aRows.length) {
+    rows += '<tr><td colspan="2" style="padding:8px 14px;background-color:#f3f0ff;font-weight:bold;font-size:12px;color:#534AB7;border-top:2px solid #534AB7;">AGENT SUMMARY</td></tr>';
+    aRows.forEach(function(r) {
+      const st = r.strong ? "background-color:#f3f0ff;color:#534AB7;font-weight:bold;" : "color:#333333;";
+      rows += '<tr><td style="padding:6px 14px;' + st + '">' + r.label + '</td>' +
+              '<td style="padding:6px 14px;text-align:right;font-weight:bold;' + st + (r.negative ? "color:#c0392b;" : "") + '">' + r.value + '</td></tr>';
+    });
+    rows += '<tr><td colspan="2" style="padding:6px 14px;color:#999999;font-size:11px;">' + agentSummaryNote() + '</td></tr>';
+  }
   return '<table ' + wrap + '><tbody>' + rows + '</tbody></table>';
 }
 
@@ -2667,6 +2793,13 @@ function buildComparisonHTML() {
     lastCompNet.values.forEach(function(v){ netRows += '<td ' + negCell + '>-' + money(v.commissionAmt, v.country) + '</td>'; });
     netRows += '</tr><tr><td ' + netLblCell + '>Net to OIEG</td>';
     lastCompNet.values.forEach(function(v){ netRows += '<td ' + netValCell + '>' + money(v.net, v.country) + '</td>'; });
+    netRows += '</tr>';
+  }
+  if (lastCompASP) {
+    const aspLbl = 'style="padding:9px 8px;text-align:left;font-weight:bold;background-color:#f3f0ff;color:#534AB7;"';
+    const aspVal = 'style="padding:9px 8px;text-align:center;font-weight:bold;background-color:#f3f0ff;color:#534AB7;"';
+    netRows += '<tr><td ' + aspLbl + '>ASP (per week)</td>';
+    lastCompASP.values.forEach(function(v){ netRows += '<td ' + aspVal + '>' + money(v.asp, v.country) + '/wk</td>'; });
     netRows += '</tr>';
   }
 
@@ -2720,6 +2853,7 @@ function clearForm() {
   document.getElementById("group-mode").value        = "same";
   renderGroupStudents();
   lastGroup = null;
+  lastAgent = null; lastCompNet = null; lastCompASP = null;
   document.getElementById("homestay-duration").value = 0;
   document.getElementById("homestay-type").value     = "No Accommodation";
   document.getElementById("transfer-type").value     = "No Transfer";
@@ -4143,7 +4277,7 @@ function showTemplateEmail() {
     <h2 style="color:#0077cc; margin-top:0;">Template Email - ${campus}, ${country}</h2>
     
     <div id="email-body" style="background:#f0f8ff; padding:15px; border-radius:5px; margin:20px 0; max-height:800px; overflow-y:auto; font-size:12px; line-height:1.6;">
-      <p style="font-weight:normal;">Subject: Your Personalized English Program Quotation</p>
+      <p style="font-weight:normal;">Subject: Your Personalized English Program Quotation - Oxford International ${campus}</p>
       
       <p style="font-weight:normal;">Dear ${escapeHTML(studentGreetingName())},</p>
       
@@ -4357,7 +4491,7 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
     quotationText += `${"=".repeat(50)}\n`;
   }
   
-  const text = `Subject: Your Personalized English Program Quotation
+  const text = `Subject: Your Personalized English Program Quotation - Oxford International ${campus}
 
 Dear ${studentGreetingName()},
 
