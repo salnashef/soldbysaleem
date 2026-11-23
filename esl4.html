@@ -370,8 +370,9 @@
 <div id="total-price" class="result" style="display:none;"></div>
 
 <div id="action-buttons" style="display:none; margin-top:10px;">
-  <div class="btn-grid-2">
+  <div class="btn-grid">
     <button class="btn btn-green" id="copy-btn" onclick="copyQuote()">Copy breakdown</button>
+    <button class="btn btn-purple" id="net-btn" onclick="toggleNetInBreakdown()">Net</button>
     <button class="btn btn-orange" id="dl-btn" onclick="downloadPDF()">Download PDF</button>
   </div>
   <label style="margin-top:10px;">Email to student</label>
@@ -1861,12 +1862,41 @@ function totalLabelFor(g, n) {
 function studentHeading(st) { return "Student " + st.n + " - " + st.label; }
 /* The students after Student 1, each with their own full breakdown */
 function extraStudents(g) { return (g && g.count > 1) ? g.students.slice(1) : []; }
+/* "Net" button: adds a Net (Agent) line under each TOTAL in the breakdown.
+   Net (Agent) = total - commission, commission = Agent commission % of tuition
+   after discounts. Stays on for later quotes until switched off or cleared. */
+let showNetAgent = false;
+function netCommissionRate() {
+  return parseFloat((document.getElementById("commission") || {}).value) || 0;
+}
+function netAgentOf(dd) { return dd.total - dd.tuitionFinal * (netCommissionRate() / 100); }
+function netAgentLabel() { return "Net (Agent)"; }
+function netAgentNote()  { return "Total less " + netCommissionRate() + "% agent commission on tuition"; }
+function updateNetButton() {
+  const b = document.getElementById("net-btn");
+  if (b) { b.textContent = showNetAgent ? "Hide net" : "Net"; b.style.opacity = showNetAgent ? "0.85" : "1"; }
+}
+function toggleNetInBreakdown() {
+  if (lastMode === "comparison") { calculateNetComparison(); return; }
+  showNetAgent = !showNetAgent;
+  updateNetButton();
+  if (lastCalcData) {
+    const keep = lastAgent;          /* keep any Calculate net / ASP results */
+    calculateQuote();
+    if (keep) { lastAgent = keep; renderAgentResult(); }
+  }
+}
+
 /* Group summary rows shown after the TOTAL: [label, amount] */
 function groupSummaryRows(g, country) {
   if (!g || g.count < 2) return [];
   const rows = [];
   g.students.forEach(function(st) { rows.push([studentHeading(st), money(st.total, country)]); });
   rows.push(["GROUP TOTAL (" + g.count + " students)", money(g.grand, country)]);
+  if (showNetAgent) {
+    const net = g.students.reduce(function(a, st) { return a + netAgentOf(st.d); }, 0);
+    rows.push(["GROUP " + netAgentLabel().toUpperCase(), money(net, country)]);
+  }
   return rows;
 }
 /* Notes printed under every total: promo validity and the per-student disclaimer */
@@ -1977,6 +2007,11 @@ function calculateQuote() {
     });
     return out;
   }
+  function screenNet(dd) {
+    if (!showNetAgent) return '';
+    return '<br><strong style="font-size:1.15em;color:#534AB7;">' + netAgentLabel() + ': ' + money(netAgentOf(dd), dd.country) +
+           '</strong> <span class="unit-rate">(' + netAgentNote() + ')</span>';
+  }
   const stHead = function(st) {
     return '<div style="font-weight:bold;color:#534AB7;font-size:1.05em;margin:4px 0 6px;">' + studentHeading(st) + '</div>';
   };
@@ -1991,15 +2026,18 @@ function calculateQuote() {
     '<div style="border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:10px;">' + head + '</div>' +
     body +
     '<br><strong style="font-size:1.3em;color:#0077cc;">' + totalLabelFor(g) + ': ' + money(d.total, d.country) + '</strong>' +
+    screenNet(d) +
     extraStudents(g).map(function(st) {
       return '<div style="border-top:1px solid #ddd;margin-top:14px;padding-top:10px;">' + stHead(st) + screenRows(st.d) +
-             '<br><strong style="font-size:1.3em;color:#0077cc;">' + totalLabelFor(g, st.n) + ': ' + money(st.total, st.d.country) + '</strong></div>';
+             '<br><strong style="font-size:1.3em;color:#0077cc;">' + totalLabelFor(g, st.n) + ': ' + money(st.total, st.d.country) + '</strong>' +
+             screenNet(st.d) + '</div>';
     }).join('') +
     (g.count > 1
       ? '<div style="margin-top:10px;padding:8px 10px;background:#eef7ff;border-radius:4px;">' +
         groupSummaryRows(g, d.country).map(function(r, i, arr) {
-          const last = i === arr.length - 1;
-          return (last ? '<strong style="font-size:1.15em;color:#0077cc;">' : '') + r[0] + ': ' + r[1] + (last ? '</strong>' : '');
+          const tot = /^GROUP TOTAL/.test(r[0]), net = /^GROUP NET/.test(r[0]);
+          if (net) return '<strong style="font-size:1.1em;color:#534AB7;">' + r[0] + ': ' + r[1] + '</strong>';
+          return (tot ? '<strong style="font-size:1.15em;color:#0077cc;">' : '') + r[0] + ': ' + r[1] + (tot ? '</strong>' : '');
         }).join('<br>') + '</div>'
       : '') +
     '<div style="margin-top:8px;font-size:11px;color:#777;">' +
@@ -2397,15 +2435,25 @@ function downloadPDF() {
       doc.text(totalLabelFor(g, st.n), margin+3, y+3);
       doc.text(money(dd.total, dd.country), pageW-margin-3, y+3, {align:"right"});
       y += 14;
+      if (showNetAgent) {
+        checkPage(12);
+        doc.setFillColor(243,240,255); doc.rect(margin, y-5, colW, 8, "F");
+        doc.setTextColor(83,74,183); doc.setFont("helvetica","bold"); doc.setFontSize(10.5);
+        doc.text(netAgentLabel(), margin+3, y);
+        doc.text(money(netAgentOf(dd), dd.country), pageW-margin-3, y, {align:"right"});
+        y += 6;
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+        doc.text(netAgentNote(), margin+3, y); y += 7;
+      }
       }
       g.students.forEach(drawStudent);
       const gRows = groupSummaryRows(g, d.country);
       if (gRows.length) {
         doc.setTextColor(50,50,50); doc.setFontSize(9);
         gRows.forEach(function(r, i) {
-          const last = i === gRows.length - 1;
+          const last = /^GROUP/.test(r[0]);
           checkPage(8);
-          if (last) { doc.setFillColor(238,247,255); doc.rect(margin, y-4, colW, 7, "F"); }
+          if (last) { doc.setFillColor(/^GROUP NET/.test(r[0]) ? 243 : 238, /^GROUP NET/.test(r[0]) ? 240 : 247, 255); doc.rect(margin, y-4, colW, 7, "F"); }
           doc.setFont("helvetica", last ? "bold" : "normal");
           doc.text(r[0], margin+3, y);
           doc.text(r[1], pageW-margin-3, y, {align:"right"});
@@ -2600,6 +2648,7 @@ function buildSingleQuoteText() {
 
   lines.push(rule);
   lines.push(copyRow(totalLabelFor(g), money(d.total, d.country), W));
+  if (showNetAgent) lines.push(copyRow(netAgentLabel(), money(netAgentOf(d), d.country), W));
   extraStudents(g).forEach(function(st) {
     lines.push(bar);
     lines.push(studentHeading(st).toUpperCase());
@@ -2610,6 +2659,7 @@ function buildSingleQuoteText() {
     });
     lines.push(rule);
     lines.push(copyRow(totalLabelFor(g, st.n), money(st.total, st.d.country), W));
+    if (showNetAgent) lines.push(copyRow(netAgentLabel(), money(netAgentOf(st.d), st.d.country), W));
   });
   const gRows = groupSummaryRows(g, d.country);
   if (gRows.length) {
@@ -2713,7 +2763,12 @@ function buildSingleQuoteHTML() {
     zebra = !zebra;
   });
 
-  rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g) + '</td><td ' + totalVal + '>' + money(d.total, d.country) + '</td></tr>';
+  const netLbl = 'style="padding:9px 14px;font-weight:bold;font-size:13px;color:#534AB7;background-color:#f3f0ff;"';
+  const netVal = 'style="padding:9px 14px;font-weight:bold;font-size:14px;color:#534AB7;background-color:#f3f0ff;text-align:right;"';
+  const netRow = function(dd) {
+    return showNetAgent ? '<tr><td ' + netLbl + '>' + netAgentLabel() + '</td><td ' + netVal + '>' + money(netAgentOf(dd), dd.country) + '</td></tr>' : '';
+  };
+  rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g) + '</td><td ' + totalVal + '>' + money(d.total, d.country) + '</td></tr>' + netRow(d);
   extraStudents(g).forEach(function(st) {
     rows += '<tr><td colspan="2" style="padding:8px 14px;background-color:#f3f0ff;font-weight:bold;font-size:12px;color:#534AB7;border-top:2px solid #534AB7;">' + studentHeading(st) + '</td></tr>';
     let zb = false;
@@ -2726,10 +2781,11 @@ function buildSingleQuoteHTML() {
       if (r.note) rows += '<tr><td colspan="2" ' + noteRow + '>' + r.note + '</td></tr>';
       zb = !zb;
     });
-    rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g, st.n) + '</td><td ' + totalVal + '>' + money(st.total, st.d.country) + '</td></tr>';
+    rows += '<tr><td ' + totalLbl + '>' + totalLabelFor(g, st.n) + '</td><td ' + totalVal + '>' + money(st.total, st.d.country) + '</td></tr>' + netRow(st.d);
   });
   groupSummaryRows(g, d.country).forEach(function(r, i, arr) {
-    const last = i === arr.length - 1;
+    const last = /^GROUP TOTAL/.test(r[0]);
+    if (/^GROUP NET/.test(r[0])) { rows += '<tr><td ' + netLbl + '>' + r[0] + '</td><td ' + netVal + '>' + r[1] + '</td></tr>'; return; }
     rows += last
       ? '<tr><td ' + totalLbl + '>' + r[0] + '</td><td ' + totalVal + '>' + r[1] + '</td></tr>'
       : '<tr><td style="padding:6px 14px;color:#333333;">' + r[0] + '</td><td style="padding:6px 14px;text-align:right;font-weight:bold;">' + r[1] + '</td></tr>';
@@ -2854,6 +2910,7 @@ function clearForm() {
   renderGroupStudents();
   lastGroup = null;
   lastAgent = null; lastCompNet = null; lastCompASP = null;
+  showNetAgent = false; updateNetButton();
   document.getElementById("homestay-duration").value = 0;
   document.getElementById("homestay-type").value     = "No Accommodation";
   document.getElementById("transfer-type").value     = "No Transfer";
@@ -4204,7 +4261,10 @@ function showTemplateEmail() {
     });
 
     quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;">`;
-    quotationSection += `<strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g)}: ${money(d.total, d.country)}</strong>`;
+    const emNet = function(dd) {
+      return showNetAgent ? `<div style="margin-top:4px;"><strong style="font-size:13px; color:#534AB7;">${netAgentLabel()}: ${money(netAgentOf(dd), dd.country)}</strong></div>` : "";
+    };
+    quotationSection += `<strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g)}: ${money(d.total, d.country)}</strong>` + emNet(d);
     extraStudents(g).forEach(function(st) {
       quotationSection += `<hr style="border:none; border-top:1px solid #ddd; margin:12px 0 8px;"><div style="font-weight:bold; color:#534AB7; font-size:12px; margin-bottom:6px;">${studentHeading(st)}</div>`;
       buildFeeRows(st.d).forEach(function(item) {
@@ -4214,13 +4274,15 @@ function showTemplateEmail() {
         if (item.note) quotationSection += ` <span style="color:#999; font-size:10px;">(${item.note})</span>`;
         quotationSection += `</div>`;
       });
-      quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;"><strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g, st.n)}: ${money(st.total, st.d.country)}</strong>`;
+      quotationSection += `<hr style="border:none; border-top:2px solid #0077cc; margin:10px 0;"><strong style="font-size:13px; color:#0077cc;">${totalLabelFor(g, st.n)}: ${money(st.total, st.d.country)}</strong>` + emNet(st.d);
     });
     const gRows = groupSummaryRows(g, d.country);
     if (gRows.length) {
       quotationSection += `<div style="margin-top:8px; padding:6px 8px; background:#eef7ff; border-radius:3px;">`;
       gRows.forEach(function(r, i) {
-        quotationSection += i === gRows.length - 1
+        quotationSection += /^GROUP NET/.test(r[0])
+          ? `<div style="margin-top:3px;"><strong style="font-size:13px; color:#534AB7;">${r[0]}: ${r[1]}</strong></div>`
+          : /^GROUP TOTAL/.test(r[0])
           ? `<div style="margin-top:3px;"><strong style="font-size:13px; color:#0077cc;">${r[0]}: ${r[1]}</strong></div>`
           : `<div>${r[0]}: <strong>${r[1]}</strong></div>`;
       });
@@ -4450,6 +4512,7 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
     });
     quotationText += `${"=".repeat(50)}\n`;
     quotationText += `${totalLabelFor(g)}: ${money(d.total, d.country)}\n`;
+    if (showNetAgent) quotationText += `${netAgentLabel()}: ${money(netAgentOf(d), d.country)}\n`;
     extraStudents(g).forEach(function(st) {
       quotationText += `\n${studentHeading(st).toUpperCase()}\n${"-".repeat(50)}\n`;
       buildFeeRows(st.d).forEach(function(item) {
@@ -4457,6 +4520,7 @@ function copyTemplateEmailToClipboard(campus, country, plainOnly) {
         quotationText += item.label + ": " + amount + (item.note ? " (" + item.note + ")" : "") + "\n";
       });
       quotationText += `${"=".repeat(50)}\n${totalLabelFor(g, st.n)}: ${money(st.total, st.d.country)}\n`;
+      if (showNetAgent) quotationText += `${netAgentLabel()}: ${money(netAgentOf(st.d), st.d.country)}\n`;
     });
     if (g.count > 1) quotationText += "\n";
     groupSummaryRows(g, d.country).forEach(function(r) { quotationText += r[0] + ": " + r[1] + "\n"; });
