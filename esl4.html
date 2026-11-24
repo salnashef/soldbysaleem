@@ -211,6 +211,7 @@
     <option value="Adult" selected>Adult</option>
     <option value="Minor">Minor</option>
   </select>
+  <div class="field-hint" style="margin:-4px 0 6px;">Minor fee ages: 16 to 18 in Vancouver, 16 to 17 in Toronto and Halifax.</div>
 </div>
 
 <label style="font-weight:normal; font-size:13px; margin-bottom:6px;">
@@ -854,33 +855,36 @@ const accommodationOptions = {
       { name:"Homestay - Half Board", rate:340, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
       { name:"Homestay - Roomstay", rate:329, unit:"week", extraNight:63, hsSurcharge:CA_HOMESTAY_HS, homestay:true },
 
-      /* YMCA Student Hotel - seasonal, residence application fee $220 */
-      { name:"YMCA single, shared hall bath (Jan 1 - Apr 30)", rate:806, unit:"week", monthlyRate:1728, applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (Jan 1 - Apr 30)", rate:958, unit:"week", monthlyRate:1908, applicationFee:220 },
-      { name:"YMCA single, shared hall bath (May)", rate:1008, unit:"week", monthlyRate:2232, applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (May)", rate:1159, unit:"week", monthlyRate:2376, applicationFee:220 },
-      { name:"YMCA single, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1159, unit:"week", applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1436, unit:"week", applicationFee:220 },
-      { name:"YMCA single, shared hall bath (Jun 12 - Jul 8, nightly)", rate:284, unit:"night", applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (Jun 12 - Jul 8, nightly)", rate:359, unit:"night", applicationFee:220 },
-      { name:"YMCA single, shared hall bath (Sep)", rate:1159, unit:"week", monthlyRate:2232, applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (Sep)", rate:1436, unit:"week", monthlyRate:2376, applicationFee:220 },
-      { name:"YMCA single, shared hall bath (Oct 1 - Dec 31)", rate:865, unit:"week", monthlyRate:1800, applicationFee:220 },
-      { name:"YMCA double bed, shared hall bath (Oct 1 - Dec 31)", rate:1025, unit:"week", monthlyRate:2016, applicationFee:220 },
+      /* YWCA Student Hotel - seasonal, residence application fee $220.
+         30-day (monthly) rate for stays of 30+ days; not offered Jun-Aug.
+         Taxes apply to stays under 30 days. */
+      { name:"YWCA single, shared hall bath (Jan 1 - Apr 30)", rate:806, unit:"week", monthlyRate:1728, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA double bed, shared hall bath (Jan 1 - Apr 30)", rate:958, unit:"week", monthlyRate:1908, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA single, shared hall bath (May)", rate:1008, unit:"week", monthlyRate:2232, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA double bed, shared hall bath (May)", rate:1159, unit:"week", monthlyRate:2376, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA single, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1159, unit:"week", applicationFee:220 },
+      { name:"YWCA double bed, shared hall bath (Jun 1-11, Jul 9 - Aug 31)", rate:1436, unit:"week", applicationFee:220 },
+      { name:"YWCA single, shared hall bath (Jun 12 - Jul 8, nightly)", rate:284, unit:"night", applicationFee:220 },
+      { name:"YWCA double bed, shared hall bath (Jun 12 - Jul 8, nightly)", rate:359, unit:"night", applicationFee:220 },
+      { name:"YWCA single, shared hall bath (Sep)", rate:1159, unit:"week", monthlyRate:2232, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA double bed, shared hall bath (Sep)", rate:1436, unit:"week", monthlyRate:2376, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA single, shared hall bath (Oct 1 - Dec 31)", rate:865, unit:"week", monthlyRate:1800, applicationFee:220, monthlyFromDays:30 },
+      { name:"YWCA double bed, shared hall bath (Oct 1 - Dec 31)", rate:1025, unit:"week", monthlyRate:2016, applicationFee:220, monthlyFromDays:30 },
 
-      /* GEC Living - min 5-week stay, amenities fee $131.25, deposit = 2 weeks rent */
-      { name:"GEC Pearson - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Pearson - single room, shared bath", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Viva - shared room, shared bath", rate:480, unit:"week", monthlyRate:1800, deposit:960, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Viva - single room, shared bath", rate:624, unit:"week", monthlyRate:2370, deposit:1248, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Burnaby - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Burnaby - single room, shared bath", rate:600, unit:"week", monthlyRate:1800, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC King Edward - shared room, shared bath", rate:480, unit:"week", monthlyRate:1830, deposit:960, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC King Edward - single room, shared bath", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Kingsway - shared room, shared bath (2-bed unit)", rate:464, unit:"week", monthlyRate:1740, deposit:928, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Kingsway - single room, shared bath (2 or 3-bed unit)", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Kingsway - single room, shared bath", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5 },
-      { name:"GEC Marine Gateway - sectioned bedroom", rate:510, unit:"week", monthlyRate:1920, deposit:1020, amenitiesFee:131.25, minWeeks:5 }
+      /* GEC Living - min 5-week stay, one-time amenities fee $131.25, deposit = 2 weeks rent.
+         Weekly fees for bookings up to 90 days; monthly fees for longer bookings. */
+      { name:"GEC Pearson - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Pearson - single room, shared bath", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Viva - shared room, shared bath", rate:480, unit:"week", monthlyRate:1800, deposit:960, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Viva - single room, shared bath", rate:624, unit:"week", monthlyRate:2370, deposit:1248, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Burnaby - shared room, shared bath", rate:420, unit:"week", monthlyRate:1560, deposit:840, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Burnaby - single room, shared bath", rate:600, unit:"week", monthlyRate:1800, deposit:1200, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC King Edward - shared room, shared bath", rate:480, unit:"week", monthlyRate:1830, deposit:960, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC King Edward - single room, shared bath", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Kingsway - shared room, shared bath (2-bed unit)", rate:464, unit:"week", monthlyRate:1740, deposit:928, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Kingsway - single room, shared bath (2 or 3-bed unit)", rate:600, unit:"week", monthlyRate:2280, deposit:1200, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Marine Gateway - private bedroom", rate:644, unit:"week", monthlyRate:2460, deposit:1288, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 },
+      { name:"GEC Marine Gateway - sectioned bedroom", rate:510, unit:"week", monthlyRate:1920, deposit:1020, amenitiesFee:131.25, minWeeks:5, monthlyFromDays:91 }
     ],
     Toronto: [
       { name:"No Accommodation", rate:0, unit:"week", none:true },
@@ -891,7 +895,8 @@ const accommodationOptions = {
       { name:"HOEM single, shared bath (3-bed apartment)", rate:810, unit:"week", deposit:500 },
       { name:"HOEM single, private bath (3-bed apartment)", rate:918, unit:"week", deposit:500 },
       { name:"HOEM single, shared bath (4-bed apartment)", rate:714, unit:"week", deposit:500 },
-      { name:"CCNM single, shared bath", rate:1195, unit:"month", applicationFee:300, deposit:2390, amenitiesFee:220, amenitiesUnit:"month" }
+      { name:"CCNM single, shared bath", rate:1195, unit:"month", applicationFee:300, deposit:2390 },
+      { name:"CCNM single, shared bath + air-conditioning", rate:1195, unit:"month", applicationFee:300, deposit:2390, amenitiesFee:220, amenitiesUnit:"month", amenitiesLabel:"Air-conditioning" }
     ],
     Halifax: [
       { name:"No Accommodation", rate:0, unit:"week", none:true },
@@ -909,8 +914,8 @@ const accommodationOptions = {
       { name:"Homestay - B&B inside Manhattan", rate:780, unit:"week", extraNight:132, hsSurcharge:42, homestay:true },
       { name:"Homestay - Half Board outside Manhattan", rate:560, unit:"week", extraNight:96, hsSurcharge:42, homestay:true },
       { name:"Homestay - Half Board inside Manhattan", rate:890, unit:"week", extraNight:151, hsSurcharge:42, homestay:true },
-      { name:"West Side YMCA single, shared hall bath", rate:945, unit:"week", extraNight:135, hsSurcharge:210, maxNights:25 },
-      { name:"HI NYC Hostel shared room, 10-12 beds (YRG groups only)", rate:455, unit:"week", extraNight:65, hsSurcharge:210, maxNights:21 },
+      { name:"West Side YMCA single, shared hall bath", rate:945, unit:"week", extraNight:135, extraNightHS:165, hsSurcharge:210, maxNights:25 },
+      { name:"HI NYC Hostel shared room, 10-12 beds (YRG groups only)", rate:455, unit:"week", extraNight:65, extraNightHS:95, hsSurcharge:210, maxNights:21 },
       { name:"92NY150 single, shared hall bath", rate:2800, unit:"month", hsSurcharge:195, applicationFee:260, deposit:700 },
       { name:"92NY150 shared room, 2 beds, shared hall bath", rate:2200, unit:"month", hsSurcharge:295, applicationFee:260, deposit:700 }
     ]
@@ -1408,6 +1413,15 @@ function updateAccommodationHint() {
 /* =========================================================================
    PRICING HELPERS
    ========================================================================= */
+/* Minimum age per Canadian accommodation (2026 accommodation fees sheet):
+   homestay full/half board 16; roomstay 18 (19 in Vancouver); residences 19 (18 in Halifax). */
+function accomMinAgeFor(country, campus, accom) {
+  if (!accom || accom.none) return 0;
+  if (country === "USA") return /Half Board|HI NYC/i.test(accom.name) ? 16 : 18;
+  if (accom.homestay) return /Roomstay/i.test(accom.name) ? (campus === "Vancouver" ? 19 : 18) : 16;
+  return campus === "Halifax" ? 18 : 19;
+}
+
 function isHighSeasonMonth(country, m) {
   if (country === "Canada") return m >= 6 && m <= 8;              // Jun 1 - Aug 31
   return (m >= 4 && m <= 8) || m === 11 || m === 12;              // Apr 1 - Aug 31, Nov 1 - Dec 31
@@ -1641,7 +1655,16 @@ function calculateGeneric(prog) {
     : (accom.unit === "month" ? Math.ceil(accomWeeks / 4)
       : accom.unit === "night" ? accomWeeks * 7
       : accomWeeks);
-  const accomBase   = accom.rate * billedUnits;
+  /* Weekly options with a monthly rate (YWCA 30-day rate from 30 days; GEC monthly
+     for bookings over 90 days): each full 30 days is billed at the monthly rate and
+     the remaining days at the weekly rate (rounded up to weeks), capped at one more month. */
+  let accomBase = accom.rate * billedUnits, accomMonths = 0, accomLeftWeeks = 0;
+  const stayDays = accomWeeks * 7;
+  if (!accom.none && accom.unit === "week" && accom.monthlyRate && accom.monthlyFromDays && stayDays >= accom.monthlyFromDays) {
+    accomMonths    = Math.floor(stayDays / 30);
+    accomLeftWeeks = Math.ceil((stayDays - accomMonths * 30) / 7);
+    accomBase = accomMonths * accom.monthlyRate + Math.min(accomLeftWeeks * accom.rate, accom.monthlyRate);
+  }
   const accomAppFee = accom.none ? 0 : (accom.applicationFee || 0);
   const accomDeposit = accom.none ? 0 : (accom.deposit || 0);
   const amenitiesUnits = accom.none || !accom.amenitiesFee ? 0
@@ -1650,7 +1673,12 @@ function calculateGeneric(prog) {
   const accomMinWeeks  = accom.minWeeks || 0;
   const accomMaxNights = accom.maxNights || 0;
   const pFee        = accom.none ? 0 : homestayPlacementFees[country];
-  const extraNightFee = (accom.none || !accom.extraNight) ? 0 : accom.extraNight * extraNights;
+  let extraNightRate = accom.extraNight || 0;
+  if (accom.extraNightHS && !isNaN(startDate.getTime())) {
+    const endStay = new Date(startDate); endStay.setDate(startDate.getDate() + accomWeeks * 7);
+    if (isHighSeasonMonth(country, endStay.getMonth() + 1)) extraNightRate = accom.extraNightHS;
+  }
+  const extraNightFee = (accom.none || !extraNightRate) ? 0 : extraNightRate * extraNights;
 
   let hsUnits = 0;
   if (!accom.none && accom.hsSurcharge && billedUnits > 0 && !isNaN(startDate.getTime())) {
@@ -1666,7 +1694,9 @@ function calculateGeneric(prog) {
   const hsTotal = hsUnits * hsRate;
 
   const dietFee = (specialDiet && !accom.none) ? specialDietWeekly * accomWeeks : 0;
-  const supplementFee = (country === "Canada" && studentType === "Minor" && !accom.none)
+  /* Minor fee applies to homestay full board / half board only (not roomstay or residences) */
+  const minorFeeApplies = accom.homestay && !/Roomstay/i.test(accom.name);
+  const supplementFee = (country === "Canada" && studentType === "Minor" && minorFeeApplies)
     ? MINOR_SUPPLEMENT_WEEKLY_RATE * accomWeeks : 0;
 
   /* other fees */
@@ -1709,7 +1739,10 @@ function calculateGeneric(prog) {
     tuitionFinal:tuitionFinal,
     regFee:regFee, matTotal:matTotal, matNote:matNote,
     accomName:accom.name, accomRate:accom.rate, accomUnit:accom.unit, accomWeeks:accomWeeks,
-    billedUnits:billedUnits, accomBase:accomBase, extraNights:extraNights, extraNightFee:extraNightFee,
+    billedUnits:billedUnits, accomBase:accomBase, accomMonths:accomMonths, accomLeftWeeks:accomLeftWeeks,
+    accomMonthlyRate:accom.monthlyRate || 0,
+    accomTaxNote:(/^YWCA/.test(accom.name) && accomWeeks > 0 && accomWeeks * 7 < 30) ? "taxes apply to stays under 30 days (not included)" : "",
+    accomAmenitiesLabel:accom.amenitiesLabel || "", accomMinAge:accomMinAgeFor(country, campus, accom), extraNights:extraNights, extraNightFee:extraNightFee,
     accomAppFee:accomAppFee, accomDeposit:accomDeposit, accomAmenities:accomAmenities,
     amenitiesUnits:amenitiesUnits, accomMinWeeks:accomMinWeeks, accomMaxNights:accomMaxNights,
     pFee:pFee, hsUnits:hsUnits, hsRate:hsRate, hsTotal:hsTotal,
@@ -1902,6 +1935,9 @@ function groupSummaryRows(g, country) {
 /* Notes printed under every total: promo validity and the per-student disclaimer */
 function quoteNotes(d, g) {
   const notes = [];
+  if (d.studentType === "Minor" && d.accomMinAge >= 18) {
+    notes.unshift("WARNING: minimum age for " + d.accomName + " is " + d.accomMinAge + ". Not available to minors - choose homestay " + (d.country === "USA" ? "half board." : "full or half board."));
+  }
   const promoUsed = d.promoDiscountAmount > 0 || (g && g.students.some(function(st) { return st.d && st.d.promoDiscountAmount > 0; }));
   if (promoUsed) {
     notes.push(PROMO.name + " valid " + promoDateRange() + " only.");
@@ -1951,14 +1987,22 @@ function buildFeeRows(d) {
   if (!d.junior) add("Course materials", d.matTotal, d.matNote);
   if (d.accomBase > 0) {
     let aNote = money(d.accomRate, d.country) + "/" + d.accomUnit + " x " + d.billedUnits + " " + d.accomUnit + (d.billedUnits === 1 ? "" : "s");
+    if (d.accomMonths > 0) {
+      const leftCost = d.accomLeftWeeks * d.accomRate;
+      aNote = money(d.accomMonthlyRate, d.country) + "/month x " + d.accomMonths + " (30-day rate)";
+      if (d.accomLeftWeeks > 0) aNote += leftCost > d.accomMonthlyRate
+        ? " + 1 more month for the last " + d.accomLeftWeeks + " wks (cheaper than weekly)"
+        : " + " + money(d.accomRate, d.country) + "/week x " + d.accomLeftWeeks;
+    }
     if (d.accomDeposit > 0) aNote += "; refundable security deposit " + money(d.accomDeposit, d.country) + " (not in total)";
     if (d.accomMinWeeks > 0 && d.accomWeeks < d.accomMinWeeks) aNote += "; minimum stay " + d.accomMinWeeks + " weeks";
+    if (d.accomTaxNote) aNote += "; " + d.accomTaxNote;
     if (d.accomMaxNights > 0) aNote += "; maximum stay " + d.accomMaxNights + " nights";
     add("Accommodation - " + d.accomName, d.accomBase, aNote);
   }
   if (d.extraNightFee > 0) add("Extra nights", d.extraNightFee, money(d.extraNightFee / d.extraNights, d.country) + "/night x " + d.extraNights);
   if (d.accomAppFee > 0) add("Residence application fee", d.accomAppFee, "Flat, non-refundable");
-  if (d.accomAmenities > 0) add("Residence amenities fee", d.accomAmenities,
+  if (d.accomAmenities > 0) add(d.accomAmenitiesLabel ? d.accomAmenitiesLabel : "Residence amenities fee", d.accomAmenities,
       d.amenitiesUnits > 1 ? money(d.accomAmenities / d.amenitiesUnits, d.country) + "/month x " + d.amenitiesUnits : "Flat");
   if (d.pFee > 0) add("Accommodation placement", d.pFee, "Flat, non-refundable");
   if (d.hsTotal > 0) add("High season surcharge", d.hsTotal, money(d.hsRate, d.country) + " x " + d.hsUnits + " " + d.accomUnit + (d.hsUnits === 1 ? "" : "s"));
